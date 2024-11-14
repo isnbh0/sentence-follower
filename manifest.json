@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Sentence Highlighter",
+  "version": "2.0",
+  "description": "Highlights the current sentence when hovering over text",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "options/options.html",
+    "default_icon": {
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": false
+  },
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content_scripts/sentence-highlight.js"]
+    }
+  ]
+}
