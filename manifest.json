@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sentence Highlighter",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Highlights the current sentence when hovering over text",
   "icons": {
     "16": "icons/icon16.png",

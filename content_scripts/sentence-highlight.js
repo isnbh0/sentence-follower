@@ -6,7 +6,7 @@ const browserAPI = (typeof window !== 'undefined' && window.browser) ? window.br
         }
     });
 
-const DEBUG = false;
+const DEBUG = true;
 
 const log = {
     info: (...args) => DEBUG && console.log(...args),
@@ -22,6 +22,9 @@ const DEFAULT_OPTIONS = {
 };
 
 let currentOptions = { ...DEFAULT_OPTIONS };
+
+// Add CJK Unicode ranges constant
+const CJK_RANGES = '[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]';
 
 // Initialize the sentence highlighter
 function initializeHighlighter() {
@@ -334,13 +337,13 @@ function findSentenceBoundaries(text, offset) {
     const normalizedText = text.replace(/\s+/g, ' ');
     const normalizedOffset = offset - (text.slice(0, offset).length - text.slice(0, offset).replace(/\s+/g, ' ').length);
 
-    const sentenceEndRegex = /[.!?]|\)/g;
+    const sentenceEndRegex = /[.!?。！？︕︖]/g;
     const footnotePattern = /(?:\[[0-9a-zA-Z]+\]|\([0-9a-zA-Z]+\))/;
-    const nextSentencePattern = /(?:\s+[A-Z]|\s*\(|$)/;
+    const nextSentencePattern = new RegExp(`(?:\\s+[A-Z]|${CJK_RANGES}|\\s*\\(|$)`);
     const listItemBoundaryPattern = /<\/li>/i;
 
     const combinedRegex = new RegExp(
-        `(?:${sentenceEndRegex.source})${footnotePattern.source}?(?=${nextSentencePattern.source}|${listItemBoundaryPattern.source})`,
+        `(?:${sentenceEndRegex.source})${footnotePattern.source}?(?=${nextSentencePattern.source}|${listItemBoundaryPattern.source}|${CJK_RANGES}?)`,
         'g'
     );
 
