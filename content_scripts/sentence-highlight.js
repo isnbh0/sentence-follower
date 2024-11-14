@@ -6,7 +6,7 @@ const browserAPI = (typeof window !== 'undefined' && window.browser) ? window.br
         }
     });
 
-const DEBUG = true;
+const DEBUG = false;
 
 const log = {
     info: (...args) => DEBUG && console.log(...args),
