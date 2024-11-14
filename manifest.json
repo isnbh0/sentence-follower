@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sentence Highlighter",
-  "version": "2.0",
+  "version": "0.1.1",
   "description": "Highlights the current sentence when hovering over text",
   "icons": {
     "16": "icons/icon16.png",
@@ -22,10 +22,7 @@
   },
   "permissions": [
     "storage",
-    "tabs"
-  ],
-  "host_permissions": [
-    "<all_urls>"
+    "activeTab"
   ],
   "background": {
     "scripts": ["background.js"],
