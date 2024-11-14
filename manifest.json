@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sentence Highlighter",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Highlights the current sentence when hovering over text",
   "icons": {
     "16": "icons/icon16.png",
@@ -33,5 +33,10 @@
       "matches": ["http://*/*", "https://*/*"],
       "js": ["content_scripts/sentence-highlight.js"]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{21bfdc3f-dc23-4712-ab2f-d0db70fa5b97}"
+    }
+  }
 }
