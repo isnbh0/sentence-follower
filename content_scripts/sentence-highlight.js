@@ -14,7 +14,7 @@ const log = {
 };
 
 const DEFAULT_OPTIONS = {
-    enabled: true,
+    enabled: false,
     backgroundColor: '#ffff00',
     useDefaultBackground: false,
     textColor: '#000000',

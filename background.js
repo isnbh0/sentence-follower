@@ -1,14 +1,28 @@
-// Define browserAPI similar to content script
-const browserAPI = (typeof window !== 'undefined' && window.browser) ? window.browser :
-    (typeof chrome !== 'undefined' ? chrome : {
-        runtime: {
-            onMessage: { addListener: () => { } },
-        },
-        tabs: {
-            query: async () => [],
-            sendMessage: async () => { }
+const browserAPI = (typeof browser !== 'undefined') ? browser : chrome;
+
+const DEFAULT_OPTIONS = {
+    enabled: false, // Ensure this matches the default state
+    backgroundColor: '#ffff00',
+    useDefaultBackground: false,
+    textColor: '#000000',
+    useDefaultText: false
+};
+
+browserAPI.runtime.onInstalled.addListener(() => {
+    browserAPI.storage.local.get(DEFAULT_OPTIONS).then((options) => {
+        // Check if any default option is missing
+        const shouldSetDefaults = Object.keys(DEFAULT_OPTIONS).some(key => !(key in options));
+        if (shouldSetDefaults) {
+            browserAPI.storage.local.set(DEFAULT_OPTIONS).then(() => {
+                console.log('Default options have been set.');
+            }).catch(error => {
+                console.error('Error setting default options:', error);
+            });
         }
+    }).catch(error => {
+        console.error('Error retrieving storage options:', error);
     });
+});
 
 // Listen for messages from the options page
 browserAPI.runtime.onMessage.addListener((message, sender) => {
