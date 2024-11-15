@@ -10,7 +10,7 @@ const browserAPI = (typeof window !== 'undefined' && window.browser) ? window.br
     });
 
 const DEFAULT_OPTIONS = {
-    enabled: true,
+    enabled: false,
     backgroundColor: '#ffff00',
     textColor: '#000000'
 };
