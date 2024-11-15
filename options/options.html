@@ -8,10 +8,9 @@
         body {
             padding: 1em;
             font-family: system-ui, -apple-system, sans-serif;
-            min-width: 320px;
-            max-width: 500px;
-            margin: 0 auto;
+            margin: 0;
             background-color: #f0f0f0;
+            width: fit-content;
         }
 
         .form-group {
@@ -33,9 +32,7 @@
         }
 
         .color-group {
-            display: flex;
-            align-items: center;
-            gap: 1em;
+            display: none;
         }
 
         .status {
@@ -50,75 +47,110 @@
             opacity: 1;
         }
 
-        .color-button {
-            display: flex;
-            align-items: center;
-            gap: 0.5em;
-            padding: 0.5em;
+        /* Settings Box Styles */
+        .settings-box {
             border: 1px solid #ccc;
-            border-radius: 4px;
-            background: white;
-            cursor: pointer;
-            position: relative;
-            min-width: 150px;
-            justify-content: center;
-        }
-
-        .color-button .sample-text {
-            padding: 2px 4px;
-            border: 1px solid #ccc;
-            border-radius: 2px;
-            font-size: 0.9em;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        /* Custom Color Picker Styles */
-        .color-palette {
-            position: absolute;
-            top: 100%;
-            left: 0;
+            border-radius: 8px;
+            padding: 1em;
             background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 0.5em;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-top: 2em;
+            width: fit-content;
+        }
+
+        .settings-box .form-group {
+            margin-bottom: 1.5em;
+        }
+
+        /* Color Picker Panels */
+        .color-picker-panel {
             display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 0.5em;
+            justify-content: space-evenly;
+            width: 100%;
+            margin: 0;
+            padding: 0.5em 0;
+        }
+
+        /* Individual color picker groups */
+        #backgroundColorGroup,
+        #textColorGroup {
+            flex: 0 0 auto;
+            width: fit-content;
+            margin: 0;
+            padding: 0.75em;
+            text-align: center;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.2em;
+            width: fit-content;
         }
 
         .color-swatch {
-            width: 24px;
-            height: 24px;
+            width: 25px;
+            height: 25px;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 2px;
             cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
         }
 
-        .color-palette input[type="text"] {
-            width: 100px;
-            padding: 2px 4px;
+        .color-swatch.no-color {
+            background-color: #e0e0e0;
+        }
+
+        .color-swatch.no-color::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 1px;
+            height: 100%;
+            background-color: #ff0000;
+            transform: rotate(45deg);
+        }
+
+        .selected {
+            border: 2px solid #4caf50;
+        }
+
+        /* Sample Preview Panel */
+        .preview-panel {
             border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 0.9em;
+            border-radius: 8px;
+            padding: 1em;
+            background-color: #fff;
+            margin-top: 2em;
+            text-align: center;
         }
 
-        .color-palette button {
-            padding: 2px 6px;
+        .preview-text {
+            font-size: 1.2em;
+            padding: 1em;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* Save Button Styles */
+        .settings-box button[type="submit"] {
+            width: 100%;
+            padding: 0.75em;
             background-color: #4caf50;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 1em;
         }
 
-        .color-palette button:hover {
+        .settings-box button[type="submit"]:hover {
             background-color: #45a049;
         }
 
@@ -157,8 +189,10 @@
 
         .toggle-container {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
+            gap: 1em;
+            width: fit-content;
         }
 
         /* Disabled Section Styles */
@@ -167,33 +201,15 @@
             pointer-events: none;
         }
 
-        /* Settings Box Styles */
-        .settings-box {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 1em;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            margin-top: 2em;
-        }
-
-        .settings-box .form-group {
-            margin-bottom: 1.5em;
-        }
-
-        .settings-box button[type="submit"] {
-            width: 100%;
-            padding: 0.75em;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
-        .settings-box button[type="submit"]:hover {
-            background-color: #45a049;
+        /* Responsive Adjustments */
+        @media (max-width: 420px) {
+            .color-picker-panel {
+                gap: 0.5em;
+            }
+            
+            .toggle-container {
+                flex-direction: row;
+            }
         }
     </style>
 </head>
@@ -211,60 +227,43 @@
 
         <!-- Settings Box -->
         <div class="settings-box">
-            <!-- Background Color Picker -->
-            <div class="form-group" id="backgroundColorGroup">
-                <label>Background Color</label>
-                <div class="color-group">
-                    <button type="button" class="color-button" id="backgroundColorButton">
-                        <span class="sample-text" id="backgroundColorPreview">Sample Background</span>
-                    </button>
-                    <label>
-                        <input type="checkbox" id="useDefaultBackground" />
-                        Use default (no highlight)
-                    </label>
+            <div class="color-picker-panel">
+                <!-- Background Color Picker -->
+                <div class="form-group" id="backgroundColorGroup">
+                    <label>Background</label>
+                    <div class="color-options" id="backgroundColorOptions">
+                        <div class="color-swatch no-color" data-color="default"></div>
+                        <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
+                        <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
+                        <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
+                        <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
+                        <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
+                        <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
+                        <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
+                        <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                    </div>
                 </div>
-                <div class="color-palette hidden" id="backgroundColorPalette">
-                    <!-- Preset Colors -->
-                    <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
-                    <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
-                    <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
-                    <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
-                    <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
-                    <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
-                    <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
-                    <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
-                    <!-- Custom Color Input -->
-                    <input type="text" id="backgroundCustomColor" placeholder="#FFFFFF" maxlength="7" />
-                    <button type="button" id="backgroundCustomColorButton">Set</button>
+
+                <!-- Text Color Picker -->
+                <div class="form-group" id="textColorGroup">
+                    <label>Text</label>
+                    <div class="color-options" id="textColorOptions">
+                        <div class="color-swatch no-color" data-color="default"></div>
+                        <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
+                        <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
+                        <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
+                        <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
+                        <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
+                        <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
+                        <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
+                        <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Text Color Picker -->
-            <div class="form-group" id="textColorGroup">
-                <label>Text Color</label>
-                <div class="color-group">
-                    <button type="button" class="color-button" id="textColorButton">
-                        <span class="sample-text" id="textColorPreview">Sample Text</span>
-                    </button>
-                    <label>
-                        <input type="checkbox" id="useDefaultText" />
-                        Use default text color
-                    </label>
-                </div>
-                <div class="color-palette hidden" id="textColorPalette">
-                    <!-- Preset Colors -->
-                    <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
-                    <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
-                    <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
-                    <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
-                    <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
-                    <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
-                    <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
-                    <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
-                    <!-- Custom Color Input -->
-                    <input type="text" id="textCustomColor" placeholder="#000000" maxlength="7" />
-                    <button type="button" id="textCustomColorButton">Set</button>
-                </div>
+            <!-- Sample Preview Panel -->
+            <div class="preview-panel" id="previewPanel">
+                <span class="preview-text" id="previewText">This is a sample preview.</span>
             </div>
 
             <!-- Save Button -->
