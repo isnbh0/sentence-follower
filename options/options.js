@@ -14,25 +14,11 @@ const DEFAULT_OPTIONS = {
     backgroundColor: '#ffff00',
     useDefaultBackground: false,
     textColor: '#000000',
-    useDefaultText: true
+    useDefaultText: false
 };
 
 // Save options to browser.storage
-function saveOptions(e) {
-    e.preventDefault();
-
-    const options = {
-        enabled: document.getElementById('enabled').checked,
-        backgroundColor: document.getElementById('useDefaultBackground').checked
-            ? ''
-            : document.getElementById('backgroundColorPreview').style.backgroundColor || DEFAULT_OPTIONS.backgroundColor,
-        useDefaultBackground: document.getElementById('useDefaultBackground').checked,
-        textColor: document.getElementById('useDefaultText').checked
-            ? ''
-            : document.getElementById('textColorPreview').style.backgroundColor || DEFAULT_OPTIONS.textColor,
-        useDefaultText: document.getElementById('useDefaultText').checked
-    };
-
+function saveOptions(options) {
     browserAPI.storage.local.set(options).then(() => {
         const status = document.getElementById('status');
         status.classList.add('show');
@@ -47,6 +33,15 @@ function saveOptions(e) {
     });
 }
 
+// Handle toggle button state change
+function handleToggleChange(isEnabled) {
+    const options = {
+        enabled: isEnabled
+    };
+    saveOptions(options);
+    updateColorPickersState(isEnabled);
+}
+
 // Restore options from browser.storage
 function restoreOptions() {
     console.log('Restoring options...');
@@ -54,13 +49,24 @@ function restoreOptions() {
     browserAPI.storage.local.get(DEFAULT_OPTIONS).then((options) => {
         console.log('Retrieved options:', options);
 
-        document.getElementById('enabled').checked = options.enabled;
+        // Restore Toggle Button State
+        const enabledToggle = document.getElementById('enabledToggle');
+        if (options.enabled) {
+            enabledToggle.classList.add('active');
+            enabledToggle.setAttribute('aria-pressed', 'true');
+        } else {
+            enabledToggle.classList.remove('active');
+            enabledToggle.setAttribute('aria-pressed', 'false');
+        }
+
+        // Restore other options
         document.getElementById('backgroundColorPreview').style.backgroundColor = options.backgroundColor;
         document.getElementById('useDefaultBackground').checked = options.useDefaultBackground;
         document.getElementById('textColorPreview').style.backgroundColor = options.textColor;
         document.getElementById('useDefaultText').checked = options.useDefaultText;
 
         updateColorInputStates();
+        updateColorPickersState(options.enabled);
     }).catch(error => {
         console.error('Error restoring options:', error);
     });
@@ -82,6 +88,45 @@ function updateColorInputStates() {
     document.getElementById('textColorPalette').classList.toggle('hidden', useDefaultText);
 }
 
+// Enable or disable color pickers based on toggle state
+function updateColorPickersState(isEnabled) {
+    // Background Color Controls
+    document.getElementById('backgroundColorButton').disabled = !isEnabled || document.getElementById('useDefaultBackground').checked;
+    document.getElementById('useDefaultBackground').disabled = !isEnabled;
+    if (!isEnabled) {
+        document.getElementById('backgroundColorPreview').style.opacity = 0.5;
+        document.getElementById('backgroundColorPalette').classList.add('hidden');
+    } else {
+        // Restore opacity based on 'useDefaultBackground' checkbox
+        const useDefaultBackground = document.getElementById('useDefaultBackground').checked;
+        document.getElementById('backgroundColorPreview').style.opacity = useDefaultBackground ? 0.5 : 1;
+    }
+
+    // Text Color Controls
+    document.getElementById('textColorButton').disabled = !isEnabled || document.getElementById('useDefaultText').checked;
+    document.getElementById('useDefaultText').disabled = !isEnabled;
+    if (!isEnabled) {
+        document.getElementById('textColorPreview').style.opacity = 0.5;
+        document.getElementById('textColorPalette').classList.add('hidden');
+    } else {
+        // Restore opacity based on 'useDefaultText' checkbox
+        const useDefaultText = document.getElementById('useDefaultText').checked;
+        document.getElementById('textColorPreview').style.opacity = useDefaultText ? 0.5 : 1;
+    }
+
+    // Add or remove 'disabled-section' class to gray out the sections
+    const backgroundColorGroup = document.getElementById('backgroundColorGroup');
+    const textColorGroup = document.getElementById('textColorGroup');
+
+    if (!isEnabled) {
+        backgroundColorGroup.classList.add('disabled-section');
+        textColorGroup.classList.add('disabled-section');
+    } else {
+        backgroundColorGroup.classList.remove('disabled-section');
+        textColorGroup.classList.remove('disabled-section');
+    }
+}
+
 // Setup Custom Color Pickers
 function setupCustomColorPickers() {
     // Background Color Picker
@@ -92,7 +137,8 @@ function setupCustomColorPickers() {
     const bgCustomInput = document.getElementById('backgroundCustomColor');
     const bgCustomButton = document.getElementById('backgroundCustomColorButton');
 
-    bgColorButton.addEventListener('click', () => {
+    bgColorButton.addEventListener('click', (e) => {
+        e.stopPropagation();
         bgColorPalette.classList.toggle('hidden');
     });
 
@@ -123,7 +169,8 @@ function setupCustomColorPickers() {
     const textCustomInput = document.getElementById('textCustomColor');
     const textCustomButton = document.getElementById('textCustomColorButton');
 
-    textColorButton.addEventListener('click', () => {
+    textColorButton.addEventListener('click', (e) => {
+        e.stopPropagation();
         textColorPalette.classList.toggle('hidden');
     });
 
@@ -157,11 +204,37 @@ function setupCustomColorPickers() {
     });
 }
 
+// Handle Toggle Button Click
+function setupToggleButton() {
+    const enabledToggle = document.getElementById('enabledToggle');
+    enabledToggle.addEventListener('click', () => {
+        const isActive = enabledToggle.classList.toggle('active');
+        enabledToggle.setAttribute('aria-pressed', isActive);
+        handleToggleChange(isActive);
+    });
+}
+
 // Add event listeners
 document.addEventListener('DOMContentLoaded', () => {
     restoreOptions();
     setupCustomColorPickers();
+    setupToggleButton();
 });
-document.getElementById('options-form').addEventListener('submit', saveOptions);
+document.getElementById('options-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const options = {
+        backgroundColor: document.getElementById('useDefaultBackground').checked
+            ? ''
+            : document.getElementById('backgroundColorPreview').style.backgroundColor || DEFAULT_OPTIONS.backgroundColor,
+        useDefaultBackground: document.getElementById('useDefaultBackground').checked,
+        textColor: document.getElementById('useDefaultText').checked
+            ? ''
+            : document.getElementById('textColorPreview').style.backgroundColor || DEFAULT_OPTIONS.textColor,
+        useDefaultText: document.getElementById('useDefaultText').checked
+    };
+
+    saveOptions(options);
+});
 document.getElementById('useDefaultBackground').addEventListener('change', updateColorInputStates);
 document.getElementById('useDefaultText').addEventListener('change', updateColorInputStates); 

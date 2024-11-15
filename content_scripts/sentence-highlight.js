@@ -399,7 +399,7 @@ function toggleHighlighter() {
             if (!newEnabledState) {
                 removeHighlights();
             }
-            displayStatusMessage(`Sentence Highlighter ${newEnabledState ? 'Enabled' : 'Disabled'}`);
+            displayStatusMessage(`Sentence Follower ${newEnabledState ? 'Enabled' : 'Disabled'}`);
         })
         .catch(error => {
             console.error('Error toggling highlighter:', error);

@@ -7,9 +7,10 @@
         body {
             padding: 1em;
             font-family: system-ui, -apple-system, sans-serif;
-            min-width: 300px;
-            max-width: 400px;
-            margin: 0;
+            min-width: 320px;
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #f0f0f0;
         }
 
         .form-group {
@@ -18,7 +19,16 @@
 
         label {
             display: block;
+            font-weight: bold;
             margin-bottom: 0.5em;
+        }
+
+        .shortcut-note {
+            display: block;
+            color: #666;
+            font-size: 0.85em;
+            margin-top: -0.5em;
+            margin-bottom: 1em;
         }
 
         .color-group {
@@ -31,6 +41,8 @@
             color: green;
             opacity: 0;
             transition: opacity 0.5s;
+            margin-top: 1em;
+            text-align: center;
         }
 
         .status.show {
@@ -46,6 +58,8 @@
             border-radius: 4px;
             background: white;
             cursor: pointer;
+            flex: 1;
+            max-width: 200px;
         }
 
         .color-preview {
@@ -75,75 +89,161 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
+        /* Toggle Button Styles */
+        .toggle-button {
+            width: 60px;
+            height: 30px;
+            background-color: #ccc;
+            border: none;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-button::after {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+
+        .toggle-button.active {
+            background-color: #4caf50;
+        }
+
+        .toggle-button.active::after {
+            left: 32px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Disabled Section Styles */
+        .disabled-section {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Settings Box Styles */
+        .settings-box {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 1em;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .settings-box .form-group {
+            margin-bottom: 1.5em;
+        }
+
+        .settings-box button[type="button"] {
+            flex: none;
+        }
+
+        .settings-box button[type="submit"] {
+            width: 100%;
+            padding: 0.75em;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .settings-box button[type="submit"]:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 
 <body>
     <form id="options-form">
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="enabled" />
-                Enable Sentence Follower
-            </label>
+        <!-- Toggle Section -->
+        <div class="form-group toggle-container">
+            <div>
+                <label for="enabledToggle">Enable Sentence Follower</label>
+                <span class="shortcut-note">(Alt+Shift+H to toggle)</span>
+            </div>
+            <button type="button" id="enabledToggle" class="toggle-button" aria-pressed="true"></button>
         </div>
 
-        <div class="form-group">
-            <label>Background Color</label>
-            <div class="color-group">
-                <button type="button" class="color-button" id="backgroundColorButton">
-                    <span class="color-preview" id="backgroundColorPreview"></span>
-                    Pick Color
-                </button>
-                <label>
-                    <input type="checkbox" id="useDefaultBackground" />
-                    Use default (no highlight)
-                </label>
+        <!-- Settings Box -->
+        <div class="settings-box">
+            <!-- Background Color Picker -->
+            <div class="form-group" id="backgroundColorGroup">
+                <label>Background Color</label>
+                <div class="color-group">
+                    <button type="button" class="color-button" id="backgroundColorButton">
+                        <span class="color-preview" id="backgroundColorPreview"></span>
+                        Pick Color
+                    </button>
+                    <label>
+                        <input type="checkbox" id="useDefaultBackground" />
+                        Use default (no highlight)
+                    </label>
+                </div>
+                <div class="color-palette hidden" id="backgroundColorPalette">
+                    <!-- Define your color options here -->
+                    <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
+                    <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
+                    <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
+                    <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
+                    <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
+                    <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
+                    <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
+                    <input type="text" id="backgroundCustomColor" placeholder="#FFFFFF" maxlength="7" />
+                    <button type="button" id="backgroundCustomColorButton">Set</button>
+                </div>
             </div>
-            <div class="color-palette hidden" id="backgroundColorPalette">
-                <!-- Define your color options here -->
-                <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
-                <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
-                <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
-                <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
-                <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
-                <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
-                <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
-                <input type="text" id="backgroundCustomColor" placeholder="#FFFFFF" maxlength="7" />
-                <button type="button" id="backgroundCustomColorButton">Set</button>
+
+            <!-- Text Color Picker -->
+            <div class="form-group" id="textColorGroup">
+                <label>Text Color</label>
+                <div class="color-group">
+                    <button type="button" class="color-button" id="textColorButton">
+                        <span class="color-preview" id="textColorPreview"></span>
+                        Pick Color
+                    </button>
+                    <label>
+                        <input type="checkbox" id="useDefaultText" />
+                        Use default text color
+                    </label>
+                </div>
+                <div class="color-palette hidden" id="textColorPalette">
+                    <!-- Define your color options here -->
+                    <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
+                    <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
+                    <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
+                    <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
+                    <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
+                    <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
+                    <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                    <input type="text" id="textCustomColor" placeholder="#000000" maxlength="7" />
+                    <button type="button" id="textCustomColorButton">Set</button>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="form-group">
+                <button type="submit">Save Color Choices</button>
             </div>
         </div>
 
-        <div class="form-group">
-            <label>Text Color</label>
-            <div class="color-group">
-                <button type="button" class="color-button" id="textColorButton">
-                    <span class="color-preview" id="textColorPreview"></span>
-                    Pick Color
-                </button>
-                <label>
-                    <input type="checkbox" id="useDefaultText" />
-                    Use default text color
-                </label>
-            </div>
-            <div class="color-palette hidden" id="textColorPalette">
-                <!-- Define your color options here -->
-                <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
-                <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
-                <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
-                <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
-                <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
-                <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
-                <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
-                <input type="text" id="textCustomColor" placeholder="#000000" maxlength="7" />
-                <button type="button" id="textCustomColorButton">Set</button>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <button type="submit">Save Options</button>
-        </div>
+        <div id="status" class="status">Options saved!</div>
     </form>
-    <div id="status" class="status">Options saved!</div>
     <script src="options.js"></script>
 </body>
 
