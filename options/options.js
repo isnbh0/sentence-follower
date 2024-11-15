@@ -60,9 +60,11 @@ function restoreOptions() {
         }
 
         // Restore other options
-        document.getElementById('backgroundColorPreview').style.backgroundColor = options.backgroundColor;
+        document.getElementById('backgroundColorPreview').style.backgroundColor = options.backgroundColor || '#ffff00';
+        document.getElementById('backgroundColorPreview').style.color = invertColor(options.backgroundColor || '#ffff00');
         document.getElementById('useDefaultBackground').checked = options.useDefaultBackground;
-        document.getElementById('textColorPreview').style.backgroundColor = options.textColor;
+        document.getElementById('textColorPreview').style.color = options.textColor || '#000000';
+        document.getElementById('textColorPreview').style.backgroundColor = 'transparent';
         document.getElementById('useDefaultText').checked = options.useDefaultText;
 
         updateColorInputStates();
@@ -70,6 +72,22 @@ function restoreOptions() {
     }).catch(error => {
         console.error('Error restoring options:', error);
     });
+}
+
+// Function to invert color for text readability
+function invertColor(hex) {
+    // Remove '#' if present
+    hex = hex.replace('#', '');
+    // Parse r, g, b values
+    let r = parseInt(hex.substr(0, 2), 16);
+    let g = parseInt(hex.substr(2, 2), 16);
+    let b = parseInt(hex.substr(4, 2), 16);
+    // Invert colors
+    r = 255 - r;
+    g = 255 - g;
+    b = 255 - b;
+    // Convert back to hex
+    return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
 }
 
 // Update color input states based on checkboxes
@@ -139,6 +157,7 @@ function setupCustomColorPickers() {
 
     bgColorButton.addEventListener('click', (e) => {
         e.stopPropagation();
+        // Toggle visibility
         bgColorPalette.classList.toggle('hidden');
     });
 
@@ -146,6 +165,7 @@ function setupCustomColorPickers() {
         swatch.addEventListener('click', () => {
             const color = swatch.getAttribute('data-color');
             bgColorPreview.style.backgroundColor = color;
+            bgColorPreview.style.color = invertColor(color);
             bgColorPalette.classList.add('hidden');
         });
     });
@@ -154,6 +174,7 @@ function setupCustomColorPickers() {
         const color = bgCustomInput.value.trim();
         if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
             bgColorPreview.style.backgroundColor = color;
+            bgColorPreview.style.color = invertColor(color);
             bgCustomInput.value = '';
             bgColorPalette.classList.add('hidden');
         } else {
@@ -171,13 +192,15 @@ function setupCustomColorPickers() {
 
     textColorButton.addEventListener('click', (e) => {
         e.stopPropagation();
+        // Toggle visibility
         textColorPalette.classList.toggle('hidden');
     });
 
     textColorSwatches.forEach(swatch => {
         swatch.addEventListener('click', () => {
             const color = swatch.getAttribute('data-color');
-            textColorPreview.style.backgroundColor = color;
+            textColorPreview.style.color = color;
+            textColorPreview.style.backgroundColor = 'transparent';
             textColorPalette.classList.add('hidden');
         });
     });
@@ -185,7 +208,8 @@ function setupCustomColorPickers() {
     textCustomButton.addEventListener('click', () => {
         const color = textCustomInput.value.trim();
         if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
-            textColorPreview.style.backgroundColor = color;
+            textColorPreview.style.color = color;
+            textColorPreview.style.backgroundColor = 'transparent';
             textCustomInput.value = '';
             textColorPalette.classList.add('hidden');
         } else {
@@ -195,10 +219,10 @@ function setupCustomColorPickers() {
 
     // Close color palettes when clicking outside
     document.addEventListener('click', (event) => {
-        if (!bgColorPalette.contains(event.target) && event.target !== bgColorButton) {
+        if (!bgColorPalette.contains(event.target) && event.target !== bgColorButton && !bgColorButton.contains(event.target)) {
             bgColorPalette.classList.add('hidden');
         }
-        if (!textColorPalette.contains(event.target) && event.target !== textColorButton) {
+        if (!textColorPalette.contains(event.target) && event.target !== textColorButton && !textColorButton.contains(event.target)) {
             textColorPalette.classList.add('hidden');
         }
     });
@@ -230,7 +254,7 @@ document.getElementById('options-form').addEventListener('submit', (e) => {
         useDefaultBackground: document.getElementById('useDefaultBackground').checked,
         textColor: document.getElementById('useDefaultText').checked
             ? ''
-            : document.getElementById('textColorPreview').style.backgroundColor || DEFAULT_OPTIONS.textColor,
+            : document.getElementById('textColorPreview').style.color || DEFAULT_OPTIONS.textColor,
         useDefaultText: document.getElementById('useDefaultText').checked
     };
 

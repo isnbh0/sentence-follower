@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
+    <title>Sentence Follower Options</title>
     <style>
         body {
             padding: 1em;
@@ -15,20 +16,20 @@
 
         .form-group {
             margin-bottom: 1em;
+            position: relative;
         }
 
         label {
             display: block;
             font-weight: bold;
-            margin-bottom: 0.5em;
+            margin-bottom: 0.25em;
         }
 
         .shortcut-note {
             display: block;
             color: #666;
-            font-size: 0.85em;
-            margin-top: -0.5em;
-            margin-bottom: 1em;
+            font-size: 0.75em;
+            margin-top: 0.25em;
         }
 
         .color-group {
@@ -58,16 +59,16 @@
             border-radius: 4px;
             background: white;
             cursor: pointer;
-            flex: 1;
-            max-width: 200px;
+            position: relative;
+            min-width: 150px;
+            justify-content: center;
         }
 
-        .color-preview {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
+        .color-button .sample-text {
+            padding: 2px 4px;
             border: 1px solid #ccc;
             border-radius: 2px;
+            font-size: 0.9em;
         }
 
         .hidden {
@@ -76,6 +77,15 @@
 
         /* Custom Color Picker Styles */
         .color-palette {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 0.5em;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 100;
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
@@ -88,6 +98,28 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             cursor: pointer;
+        }
+
+        .color-palette input[type="text"] {
+            width: 100px;
+            padding: 2px 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .color-palette button {
+            padding: 2px 6px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .color-palette button:hover {
+            background-color: #45a049;
         }
 
         /* Toggle Button Styles */
@@ -125,7 +157,7 @@
 
         .toggle-container {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
         }
 
@@ -142,14 +174,11 @@
             padding: 1em;
             background-color: #fff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-top: 2em;
         }
 
         .settings-box .form-group {
             margin-bottom: 1.5em;
-        }
-
-        .settings-box button[type="button"] {
-            flex: none;
         }
 
         .settings-box button[type="submit"] {
@@ -187,8 +216,7 @@
                 <label>Background Color</label>
                 <div class="color-group">
                     <button type="button" class="color-button" id="backgroundColorButton">
-                        <span class="color-preview" id="backgroundColorPreview"></span>
-                        Pick Color
+                        <span class="sample-text" id="backgroundColorPreview">Sample Background</span>
                     </button>
                     <label>
                         <input type="checkbox" id="useDefaultBackground" />
@@ -196,7 +224,7 @@
                     </label>
                 </div>
                 <div class="color-palette hidden" id="backgroundColorPalette">
-                    <!-- Define your color options here -->
+                    <!-- Preset Colors -->
                     <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
                     <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
                     <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
@@ -204,6 +232,8 @@
                     <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
                     <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
                     <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
+                    <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                    <!-- Custom Color Input -->
                     <input type="text" id="backgroundCustomColor" placeholder="#FFFFFF" maxlength="7" />
                     <button type="button" id="backgroundCustomColorButton">Set</button>
                 </div>
@@ -214,8 +244,7 @@
                 <label>Text Color</label>
                 <div class="color-group">
                     <button type="button" class="color-button" id="textColorButton">
-                        <span class="color-preview" id="textColorPreview"></span>
-                        Pick Color
+                        <span class="sample-text" id="textColorPreview">Sample Text</span>
                     </button>
                     <label>
                         <input type="checkbox" id="useDefaultText" />
@@ -223,14 +252,16 @@
                     </label>
                 </div>
                 <div class="color-palette hidden" id="textColorPalette">
-                    <!-- Define your color options here -->
-                    <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
+                    <!-- Preset Colors -->
+                    <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
                     <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
                     <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
                     <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
                     <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
                     <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
+                    <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
                     <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                    <!-- Custom Color Input -->
                     <input type="text" id="textCustomColor" placeholder="#000000" maxlength="7" />
                     <button type="button" id="textCustomColorButton">Set</button>
                 </div>
