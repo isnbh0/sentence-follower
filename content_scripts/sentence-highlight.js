@@ -470,6 +470,11 @@ browserAPI.runtime.onMessage.addListener((message) => {
             .catch(error => {
                 console.error('Error reloading options:', error);
             });
+    } else if (message.action === 'toggleHighlighter') {
+        currentOptions.enabled = message.enabled;
+        if (!message.enabled) {
+            removeHighlights();
+        }
     }
 });
 

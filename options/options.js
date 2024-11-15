@@ -6,6 +6,10 @@ const browserAPI = (typeof window !== 'undefined' && window.browser) ? window.br
         },
         runtime: {
             sendMessage: async () => { }
+        },
+        tabs: {
+            query: async () => [],
+            sendMessage: async (tabId, message) => { }
         }
     });
 
@@ -36,8 +40,26 @@ function handleToggleChange(isEnabled) {
     const options = {
         enabled: isEnabled
     };
-    saveOptions(options);
-    updateColorPickersState(isEnabled);
+    
+    // First save the options
+    browserAPI.storage.local.set(options).then(() => {
+        // Then notify all tabs to update and remove highlights if disabled
+        browserAPI.tabs.query({}).then(tabs => {
+            tabs.forEach(tab => {
+                browserAPI.tabs.sendMessage(tab.id, { 
+                    action: 'toggleHighlighter',
+                    enabled: isEnabled 
+                }).catch(error => {
+                    // Ignore errors for tabs where content script isn't loaded
+                    console.log(`Could not send message to tab ${tab.id}:`, error);
+                });
+            });
+        });
+        
+        updateColorPickersState(isEnabled);
+    }).catch(error => {
+        console.error('Error saving options:', error);
+    });
 }
 
 // Restore options from browser.storage
