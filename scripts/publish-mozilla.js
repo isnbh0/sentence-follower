@@ -6,10 +6,16 @@ const { execSync } = require('child_process');
 const credentialsPath = path.join(__dirname, '../.secrets/mozilla.json');
 const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
 
+const configPath = path.join(__dirname, '../.web-ext-config.cjs');
+
 // Run web-ext sign with credentials
 try {
     execSync(
-        `web-ext sign --api-key=${credentials.issuer} --api-secret=${credentials.secret} --channel=listed`,
+        `web-ext sign \
+            --config=${configPath} \
+            --api-key=${credentials.issuer} \
+            --api-secret=${credentials.secret} \
+            --channel=listed`,
         { stdio: 'inherit' }
     );
     console.log('✅ Extension signed successfully');
