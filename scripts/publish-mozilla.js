@@ -31,11 +31,25 @@ try {
             --api-key=${credentials.issuer} \
             --api-secret=${credentials.secret} \
             --channel=listed \
-            --timeout=100000`,
-        { stdio: 'inherit' }
+            --timeout=10000`,
+        { stdio: 'pipe' }
     );
     console.log('✅ Extension submitted successfully');
 } catch (error) {
-    console.error('❌ Failed:', error.message);
-    process.exit(1);
+    // Capture stderr output
+    const stderr = error.stderr ? error.stderr.toString() : '';
+
+    // Check if the stderr contains the timeout indication
+    if (stderr.includes('Approval: timeout exceeded')) {
+        const urlMatch = stderr.match(/https:\/\/addons\.mozilla\.org.*\/versions\/\d+/);
+        if (urlMatch) {
+            console.warn(`⚠️ Approval timed out. Signed XPI available at: ${urlMatch[0]}`);
+        } else {
+            console.warn('⚠️ Approval timed out. XPI URL not found in the error message.');
+        }
+        process.exit(0);
+    } else {
+        console.error('❌ Failed:', stderr || error.message);
+        process.exit(1);
+    }
 }
