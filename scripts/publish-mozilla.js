@@ -15,7 +15,8 @@ try {
             --config=${configPath} \
             --api-key=${credentials.issuer} \
             --api-secret=${credentials.secret} \
-            --channel=listed`,
+            --channel=listed \
+            --timeout=1000`,
         { stdio: 'inherit' }
     );
     console.log('✅ Extension signed successfully');
