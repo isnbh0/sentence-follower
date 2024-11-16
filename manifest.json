@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sentence Follower",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "description": "Helps you follow along with long sentences on web pages by highlighting the current sentence when you hover over it",
   "icons": {
     "16": "icons/icon16.png",
