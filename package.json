@@ -15,7 +15,7 @@
   },
   "scripts": {
     "test": "jest",
-    "postversion": "node scripts/update-manifest.js && git add manifest.json && git commit --amend --no-edit",
+    "version": "node scripts/update-manifest.js && git add manifest.json",
     "start:firefox": "web-ext run",
     "publish:mozilla": "node scripts/publish-mozilla.js",
     "publish": "npm run publish:mozilla"
