@@ -3,8 +3,8 @@ const { execSync } = require('child_process');
 
 // Get Mozilla credentials from environment variables
 const credentials = {
-    issuer: process.env.MOZILLA_API_KEY,
-    secret: process.env.MOZILLA_API_SECRET
+    issuer: process.env.MOZILLA_JWT_ISSUER,
+    secret: process.env.MOZILLA_JWT_SECRET
 };
 
 // Validate credentials

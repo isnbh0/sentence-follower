@@ -27,7 +27,7 @@ jobs:
         
       - name: Build extension
         run: npm run build
-        
+
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -39,6 +39,6 @@ jobs:
           
       - name: Publish to Mozilla
         env:
-          MOZILLA_API_KEY: ${{ secrets.MOZILLA_API_KEY }}
-          MOZILLA_API_SECRET: ${{ secrets.MOZILLA_API_SECRET }}
+          MOZILLA_JWT_ISSUER: ${{ secrets.MOZILLA_JWT_ISSUER }}
+          MOZILLA_JWT_SECRET: ${{ secrets.MOZILLA_JWT_SECRET }}
         run: node scripts/publish-mozilla.js
