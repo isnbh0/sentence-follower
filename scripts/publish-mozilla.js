@@ -24,7 +24,7 @@ try {
             --api-key=${credentials.issuer} \
             --api-secret=${credentials.secret} \
             --channel=listed \
-            --timeout=1000`,
+            --timeout=100000`,
         { stdio: 'inherit' }
     );
     console.log('✅ Extension submitted successfully');
