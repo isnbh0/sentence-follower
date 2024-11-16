@@ -1,10 +1,17 @@
-const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// Read Mozilla credentials from json file
-const credentialsPath = path.join(__dirname, '../.secrets/mozilla.json');
-const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
+// Get Mozilla credentials from environment variables
+const credentials = {
+    issuer: process.env.MOZILLA_API_KEY,
+    secret: process.env.MOZILLA_API_SECRET
+};
+
+// Validate credentials
+if (!credentials.issuer || !credentials.secret) {
+    console.error('❌ Mozilla credentials not found in environment variables');
+    process.exit(1);
+}
 
 const configPath = path.join(__dirname, '../.web-ext-config.cjs');
 
