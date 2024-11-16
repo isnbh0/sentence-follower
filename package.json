@@ -15,6 +15,7 @@
   },
   "scripts": {
     "test": "jest",
+    "postversion": "node scripts/update-manifest.js && git add manifest.json && git commit --amend --no-edit",
     "start:firefox": "web-ext run"
   }
 }
