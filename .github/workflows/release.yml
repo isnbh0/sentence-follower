@@ -28,9 +28,6 @@ jobs:
       - name: Build extension
         run: npm run build
         
-      - name: Package extension
-        run: web-ext build --config=.web-ext-config.cjs
-        
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2

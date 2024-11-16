@@ -14,6 +14,7 @@
     "jest-environment-jsdom": "^29.7.0"
   },
   "scripts": {
+    "build": "web-ext build --config=.web-ext-config.cjs",
     "test": "jest",
     "version": "node scripts/update-manifest.js && git add manifest.json",
     "start:firefox": "web-ext run",
