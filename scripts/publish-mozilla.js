@@ -1,10 +1,13 @@
 const path = require('path');
+const fs = require('fs');
 const { execSync } = require('child_process');
 
 // Get Mozilla credentials from environment variables
-const credentials = {
-    issuer: process.env.MOZILLA_JWT_ISSUER,
-    secret: process.env.MOZILLA_JWT_SECRET
+const credentials = process.env.MODE === 'local'
+    ? JSON.parse(fs.readFileSync(path.join(__dirname, '../.secrets/mozilla.json')))
+    : {
+        issuer: process.env.MOZILLA_JWT_ISSUER,
+        secret: process.env.MOZILLA_JWT_SECRET
 };
 
 // Validate credentials
