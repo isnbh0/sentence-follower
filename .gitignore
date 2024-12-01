@@ -1,6 +1,9 @@
 .DS_Store
 .secrets
+.amo-upload-uuid
+
 node_modules
 coverage
+dist
 
 navernews.html
