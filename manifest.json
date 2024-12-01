@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sentence Follower",
-  "version": "0.4.14",
+  "version": "0.4.15",
   "description": "Helps you follow along with long-form text content by identifying and highlighting the sentence under your cursor",
   "icons": {
     "16": "icons/icon16.png",
