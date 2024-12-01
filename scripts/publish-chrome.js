@@ -13,7 +13,18 @@ const credentials = process.env.MODE === 'local'
 
 // Validate credentials
 if (!credentials.clientId || !credentials.clientSecret || !credentials.refreshToken || !credentials.extensionId) {
-    console.error('❌ Chrome Web Store credentials not found in environment variables');
+    if (!credentials.clientId) {
+        console.error('❌ GOOGLE_CLIENT_ID not found in environment variables');
+    }
+    if (!credentials.clientSecret) {
+        console.error('❌ GOOGLE_CLIENT_SECRET not found in environment variables');
+    }
+    if (!credentials.refreshToken) {
+        console.error('❌ GOOGLE_REFRESH_TOKEN not found in environment variables');
+    }
+    if (!credentials.chromeExtensionId) {
+        console.error('❌ GOOGLE_CHROME_EXTENSION_ID not found in environment variables');
+    }
     process.exit(1);
 }
 
