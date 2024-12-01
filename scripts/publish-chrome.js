@@ -1,14 +1,15 @@
 const path = require('path');
 const fs = require('fs');
-const fetch = require('node-fetch'); // Ensure you have node-fetch installed or use Node.js v18+
 
 // Get Chrome Web Store credentials from environment variables
-const credentials = {
-    clientId: process.env.CHROME_CLIENT_ID,           // Your Chrome API Client ID
-    clientSecret: process.env.CHROME_CLIENT_SECRET,   // Your Chrome API Client Secret
-    refreshToken: process.env.CHROME_REFRESH_TOKEN,   // Your Chrome API Refresh Token
-    extensionId: process.env.CHROME_EXTENSION_ID      // Your Chrome Extension ID
-};
+const credentials = process.env.MODE === 'local'
+    ? JSON.parse(fs.readFileSync(path.join(__dirname, '../.secrets/chrome.json')))
+    : {
+        clientId: process.env.CHROME_CLIENT_ID,
+        clientSecret: process.env.CHROME_CLIENT_SECRET,
+        refreshToken: process.env.CHROME_REFRESH_TOKEN,
+        extensionId: process.env.CHROME_EXTENSION_ID
+    };
 
 // Validate credentials
 if (!credentials.clientId || !credentials.clientSecret || !credentials.refreshToken || !credentials.extensionId) {

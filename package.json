@@ -20,7 +20,9 @@
     "test": "jest",
     "version": "node scripts/update-manifest.js && git add manifest.json",
     "start:firefox": "web-ext run",
+    "zip:chrome": "node scripts/zip-chrome.js",
+    "publish:chrome": "npm run zip:chrome && node scripts/publish-chrome.js",
     "publish:mozilla": "node scripts/publish-mozilla.js",
-    "publish": "npm run publish:mozilla"
+    "publish": "npm run publish:mozilla && npm run publish:chrome"
   }
 }
