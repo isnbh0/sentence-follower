@@ -123,23 +123,40 @@ async function publishExtension(accessToken) {
 
 // Main publishing process
 async function publishChromeExtension() {
+    console.log('🔍 Starting publishChromeExtension process');
+
     // Path to the zipped extension package
     const zipFilePath = path.join(__dirname, '../dist/extension.zip'); // Update this path as needed
+    console.log(`📂 Zip file path: ${zipFilePath}`);
 
     // Check if the zip file exists
     if (!fs.existsSync(zipFilePath)) {
         console.error(`❌ Extension package not found at path: ${zipFilePath}`);
         process.exit(1);
     }
+    console.log('✅ Extension package exists.');
 
-    // Refresh access token
-    const accessToken = await refreshAccessToken();
+    try {
+        // Refresh access token
+        console.log('🔄 Refreshing access token...');
+        const accessToken = await refreshAccessToken();
+        console.log(`🔑 Access token obtained: ${accessToken}`);
 
-    // Upload the extension package
-    await uploadExtension(accessToken, zipFilePath);
+        // Upload the extension package
+        console.log('📦 Uploading extension package...');
+        await uploadExtension(accessToken, zipFilePath);
+        console.log('✅ Extension package uploaded successfully.');
 
-    // Publish the extension
-    await publishExtension(accessToken);
+        // Publish the extension
+        console.log('🚀 Publishing the extension to Chrome Web Store...');
+        await publishExtension(accessToken);
+        console.log('✅ Extension published successfully.');
+    } catch (error) {
+        console.error(`❌ An error occurred during the publishing process: ${error.message}`);
+        process.exit(1);
+    }
+
+    console.log('🎉 publishChromeExtension process completed.');
 }
 
 // Execute the publishing process
