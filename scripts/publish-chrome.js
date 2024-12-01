@@ -5,10 +5,10 @@ const fs = require('fs');
 const credentials = process.env.MODE === 'local'
     ? JSON.parse(fs.readFileSync(path.join(__dirname, '../.secrets/chrome.json')))
     : {
-        clientId: process.env.CHROME_CLIENT_ID,
-        clientSecret: process.env.CHROME_CLIENT_SECRET,
-        refreshToken: process.env.CHROME_REFRESH_TOKEN,
-        extensionId: process.env.CHROME_EXTENSION_ID
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+        chromeExtensionId: process.env.GOOGLE_CHROME_EXTENSION_ID
     };
 
 // Validate credentials
