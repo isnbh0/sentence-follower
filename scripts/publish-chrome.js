@@ -12,7 +12,7 @@ const credentials = process.env.MODE === 'local'
     };
 
 // Validate credentials
-if (!credentials.clientId || !credentials.clientSecret || !credentials.refreshToken || !credentials.extensionId) {
+if (!credentials.clientId || !credentials.clientSecret || !credentials.refreshToken || !credentials.chromeExtensionId) {
     if (!credentials.clientId) {
         console.error('❌ GOOGLE_CLIENT_ID not found in environment variables');
     }
@@ -70,7 +70,7 @@ async function uploadExtension(accessToken, zipFilePath) {
         console.log('📦 Uploading extension package...');
         const fileData = fs.readFileSync(zipFilePath);
 
-        const uploadUrl = `https://www.googleapis.com/upload/chromewebstore/v1.1/items/${credentials.extensionId}`;
+        const uploadUrl = `https://www.googleapis.com/upload/chromewebstore/v1.1/items/${credentials.chromeExtensionId}`;
 
         const response = await fetch(uploadUrl, {
             method: 'PUT',
@@ -82,9 +82,25 @@ async function uploadExtension(accessToken, zipFilePath) {
             body: fileData
         });
 
+        const responseText = await response.text();
+
+        try {
+            const responseData = JSON.parse(responseText);
+
+            if (responseData.uploadState === 'FAILURE' && responseData.itemError) {
+                const error = responseData.itemError[0];
+                if (error.error_code === 'ITEM_NOT_UPDATABLE') {
+                    console.log('❗ Extension update blocked: The item is currently in pending review, ready to publish, or deleted status');
+                    console.log('❗ Please wait for the review to complete or check the extension status in the Chrome Web Store dashboard');
+                    process.exit(0); // Exit gracefully as this is an expected state
+                }
+            }
+        } catch (parseError) {
+            // If response isn't JSON, continue with normal error handling
+        }
+
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Upload failed with status ${response.status}: ${errorText}`);
+            throw new Error(`Upload failed with status ${response.status}: ${responseText}`);
         }
 
         console.log('✅ Extension package uploaded successfully');
@@ -98,7 +114,7 @@ async function uploadExtension(accessToken, zipFilePath) {
 async function publishExtension(accessToken) {
     try {
         console.log('🚀 Publishing extension to Chrome Web Store...');
-        const publishUrl = `https://www.googleapis.com/chromewebstore/v1.1/items/${credentials.extensionId}/publish`;
+        const publishUrl = `https://www.googleapis.com/chromewebstore/v1.1/items/${credentials.chromeExtensionId}/publish`;
 
         const response = await fetch(publishUrl, {
             method: 'POST',
@@ -138,19 +154,15 @@ async function publishChromeExtension() {
 
     try {
         // Refresh access token
-        console.log('🔄 Refreshing access token...');
         const accessToken = await refreshAccessToken();
         console.log(`🔑 Access token obtained: ${accessToken}`);
 
         // Upload the extension package
-        console.log('📦 Uploading extension package...');
         await uploadExtension(accessToken, zipFilePath);
         console.log('✅ Extension package uploaded successfully.');
 
         // Publish the extension
-        console.log('🚀 Publishing the extension to Chrome Web Store...');
-        await publishExtension(accessToken);
-        console.log('✅ Extension published successfully.');
+        console.log('❗ NOTE: Publishing is to be done manually from the Chrome Web Store dashboard.');
     } catch (error) {
         console.error(`❌ An error occurred during the publishing process: ${error.message}`);
         process.exit(1);

@@ -64,7 +64,10 @@ filesToInclude.forEach((item) => {
 });
 
 // Finalize the archive (i.e., finish the stream)
-archive.finalize().catch(err => {
-    console.error('❌ Error finalizing the archive:', err);
+archive.finalize().then(() => {
+    console.log('✅ Archive finalized successfully.');
+}).catch(err => {
+    console.log('❌ Error finalizing the archive:', err.stack || err);
+    console.error('❌ Error finalizing the archive:', err.stack || err);
     process.exit(1);
 });
