@@ -1,280 +1,352 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
+  <head>
     <meta charset="utf-8" />
     <title>Sentence Follower Options</title>
     <style>
-        body {
-            padding: 1em;
-            font-family: system-ui, -apple-system, sans-serif;
-            margin: 0;
-            background-color: #f0f0f0;
-            width: fit-content;
-        }
+      body {
+        padding: 1em;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        margin: 0;
+        background-color: #f0f0f0;
+        width: fit-content;
+      }
 
-        .form-group {
-            margin-bottom: 1em;
-            position: relative;
-        }
+      .form-group {
+        margin-bottom: 1em;
+        position: relative;
+      }
 
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 0.25em;
-        }
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.25em;
+      }
 
-        .shortcut-note {
-            display: block;
-            color: #666;
-            font-size: 0.75em;
-            margin-top: 0.25em;
-        }
+      .shortcut-note {
+        display: block;
+        color: #666;
+        font-size: 0.75em;
+        margin-top: 0.25em;
+      }
 
-        .color-group {
-            display: none;
-        }
+      .color-group {
+        display: none;
+      }
 
-        .status {
-            color: green;
-            opacity: 0;
-            transition: opacity 0.5s;
-            margin-top: 1em;
-            text-align: center;
-        }
+      .status {
+        color: green;
+        opacity: 0;
+        transition: opacity 0.5s;
+        margin-top: 1em;
+        text-align: center;
+      }
 
-        .status.show {
-            opacity: 1;
-        }
+      .status.show {
+        opacity: 1;
+      }
 
-        /* Settings Box Styles */
-        .settings-box {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 1em;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            margin-top: 2em;
-            width: fit-content;
-        }
+      /* Settings Box Styles */
+      .settings-box {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1em;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-top: 2em;
+        width: fit-content;
+      }
 
-        .settings-box .form-group {
-            margin-bottom: 1.5em;
-        }
+      .settings-box .form-group {
+        margin-bottom: 1.5em;
+      }
 
-        /* Color Picker Panels */
+      /* Color Picker Panels */
+      .color-picker-panel {
+        display: flex;
+        justify-content: space-evenly;
+        width: 100%;
+        margin: 0;
+        padding: 0.5em 0;
+      }
+
+      /* Individual color picker groups */
+      #backgroundColorGroup,
+      #textColorGroup {
+        flex: 0 0 auto;
+        width: fit-content;
+        margin: 0;
+        padding: 0.75em;
+        text-align: center;
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .color-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.2em;
+        width: fit-content;
+      }
+
+      .color-swatch {
+        width: 25px;
+        height: 25px;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        cursor: pointer;
+        transition: transform 0.2s;
+        position: relative;
+      }
+
+      .color-swatch.no-color {
+        background-color: #e0e0e0;
+      }
+
+      .color-swatch.no-color::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 1px;
+        height: 100%;
+        background-color: #ff0000;
+        transform: rotate(45deg);
+      }
+
+      .selected {
+        border: 2px solid #4caf50;
+      }
+
+      /* Sample Preview Panel */
+      .preview-panel {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1em;
+        background-color: #fff;
+        margin-top: 2em;
+        text-align: center;
+      }
+
+      .preview-text {
+        font-size: 1.2em;
+        padding: 1em;
+        border-radius: 4px;
+        display: inline-block;
+      }
+
+      /* Save Button Styles */
+      .settings-box button[type="submit"] {
+        width: 100%;
+        padding: 0.75em;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+      }
+
+      .settings-box button[type="submit"]:hover {
+        background-color: #45a049;
+      }
+
+      /* Toggle Button Styles */
+      .toggle-button {
+        width: 60px;
+        height: 30px;
+        background-color: #ccc;
+        border: none;
+        border-radius: 15px;
+        position: relative;
+        cursor: pointer;
+        outline: none;
+        transition: background-color 0.3s;
+      }
+
+      .toggle-button::after {
+        content: "";
+        width: 26px;
+        height: 26px;
+        background-color: white;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: left 0.3s;
+      }
+
+      .toggle-button.active {
+        background-color: #4caf50;
+      }
+
+      .toggle-button.active::after {
+        left: 32px;
+      }
+
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1em;
+        width: fit-content;
+      }
+
+      /* Disabled Section Styles */
+      .disabled-section {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      /* Responsive Adjustments */
+      @media (max-width: 420px) {
         .color-picker-panel {
-            display: flex;
-            justify-content: space-evenly;
-            width: 100%;
-            margin: 0;
-            padding: 0.5em 0;
-        }
-
-        /* Individual color picker groups */
-        #backgroundColorGroup,
-        #textColorGroup {
-            flex: 0 0 auto;
-            width: fit-content;
-            margin: 0;
-            padding: 0.75em;
-            text-align: center;
-            background: #f8f8f8;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .color-options {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.2em;
-            width: fit-content;
-        }
-
-        .color-swatch {
-            width: 25px;
-            height: 25px;
-            border: 1px solid #ccc;
-            border-radius: 2px;
-            cursor: pointer;
-            transition: transform 0.2s;
-            position: relative;
-        }
-
-        .color-swatch.no-color {
-            background-color: #e0e0e0;
-        }
-
-        .color-swatch.no-color::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            width: 1px;
-            height: 100%;
-            background-color: #ff0000;
-            transform: rotate(45deg);
-        }
-
-        .selected {
-            border: 2px solid #4caf50;
-        }
-
-        /* Sample Preview Panel */
-        .preview-panel {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 1em;
-            background-color: #fff;
-            margin-top: 2em;
-            text-align: center;
-        }
-
-        .preview-text {
-            font-size: 1.2em;
-            padding: 1em;
-            border-radius: 4px;
-            display: inline-block;
-        }
-
-        /* Save Button Styles */
-        .settings-box button[type="submit"] {
-            width: 100%;
-            padding: 0.75em;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
-        .settings-box button[type="submit"]:hover {
-            background-color: #45a049;
-        }
-
-        /* Toggle Button Styles */
-        .toggle-button {
-            width: 60px;
-            height: 30px;
-            background-color: #ccc;
-            border: none;
-            border-radius: 15px;
-            position: relative;
-            cursor: pointer;
-            outline: none;
-            transition: background-color 0.3s;
-        }
-
-        .toggle-button::after {
-            content: '';
-            width: 26px;
-            height: 26px;
-            background-color: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            transition: left 0.3s;
-        }
-
-        .toggle-button.active {
-            background-color: #4caf50;
-        }
-
-        .toggle-button.active::after {
-            left: 32px;
+          gap: 0.5em;
         }
 
         .toggle-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1em;
-            width: fit-content;
+          flex-direction: row;
         }
-
-        /* Disabled Section Styles */
-        .disabled-section {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 420px) {
-            .color-picker-panel {
-                gap: 0.5em;
-            }
-            
-            .toggle-container {
-                flex-direction: row;
-            }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <form id="options-form">
-        <!-- Toggle Section -->
-        <div class="form-group toggle-container">
-            <div>
-                <label for="enabledToggle">Enable Sentence Follower</label>
-                <span class="shortcut-note">(Alt+Shift+H to toggle)</span>
+      <!-- Toggle Section -->
+      <div class="form-group toggle-container">
+        <div>
+          <label for="enabledToggle">Enable Sentence Follower</label>
+          <span class="shortcut-note">(Alt+Shift+H to toggle)</span>
+        </div>
+        <button
+          type="button"
+          id="enabledToggle"
+          class="toggle-button"
+          aria-pressed="true"
+        ></button>
+      </div>
+
+      <!-- Settings Box -->
+      <div class="settings-box">
+        <div class="color-picker-panel">
+          <!-- Background Color Picker -->
+          <div class="form-group" id="backgroundColorGroup">
+            <label>Background</label>
+            <div class="color-options" id="backgroundColorOptions">
+              <div class="color-swatch no-color" data-color="default"></div>
+              <div
+                class="color-swatch"
+                data-color="#ffff00"
+                style="background-color: #ffff00"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#ff0000"
+                style="background-color: #ff0000"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#00ff00"
+                style="background-color: #00ff00"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#0000ff"
+                style="background-color: #0000ff"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#ff00ff"
+                style="background-color: #ff00ff"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#00ffff"
+                style="background-color: #00ffff"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#000000"
+                style="background-color: #000000"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#ffffff"
+                style="background-color: #ffffff"
+              ></div>
             </div>
-            <button type="button" id="enabledToggle" class="toggle-button" aria-pressed="true"></button>
+          </div>
+
+          <!-- Text Color Picker -->
+          <div class="form-group" id="textColorGroup">
+            <label>Text</label>
+            <div class="color-options" id="textColorOptions">
+              <div class="color-swatch no-color" data-color="default"></div>
+              <div
+                class="color-swatch"
+                data-color="#ffff00"
+                style="background-color: #ffff00"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#ff0000"
+                style="background-color: #ff0000"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#00ff00"
+                style="background-color: #00ff00"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#0000ff"
+                style="background-color: #0000ff"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#ff00ff"
+                style="background-color: #ff00ff"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#00ffff"
+                style="background-color: #00ffff"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#000000"
+                style="background-color: #000000"
+              ></div>
+              <div
+                class="color-swatch"
+                data-color="#ffffff"
+                style="background-color: #ffffff"
+              ></div>
+            </div>
+          </div>
         </div>
 
-        <!-- Settings Box -->
-        <div class="settings-box">
-            <div class="color-picker-panel">
-                <!-- Background Color Picker -->
-                <div class="form-group" id="backgroundColorGroup">
-                    <label>Background</label>
-                    <div class="color-options" id="backgroundColorOptions">
-                        <div class="color-swatch no-color" data-color="default"></div>
-                        <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
-                        <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
-                        <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
-                        <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
-                        <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
-                        <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
-                        <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
-                        <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
-                    </div>
-                </div>
-
-                <!-- Text Color Picker -->
-                <div class="form-group" id="textColorGroup">
-                    <label>Text</label>
-                    <div class="color-options" id="textColorOptions">
-                        <div class="color-swatch no-color" data-color="default"></div>
-                        <div class="color-swatch" data-color="#ffff00" style="background-color: #ffff00;"></div>
-                        <div class="color-swatch" data-color="#ff0000" style="background-color: #ff0000;"></div>
-                        <div class="color-swatch" data-color="#00ff00" style="background-color: #00ff00;"></div>
-                        <div class="color-swatch" data-color="#0000ff" style="background-color: #0000ff;"></div>
-                        <div class="color-swatch" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
-                        <div class="color-swatch" data-color="#00ffff" style="background-color: #00ffff;"></div>
-                        <div class="color-swatch" data-color="#000000" style="background-color: #000000;"></div>
-                        <div class="color-swatch" data-color="#ffffff" style="background-color: #ffffff;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sample Preview Panel -->
-            <div class="preview-panel" id="previewPanel">
-                <span class="preview-text" id="previewText">This is a sample preview.</span>
-            </div>
-
-            <!-- Save Button -->
-            <div class="form-group">
-                <button type="submit">Save Color Choices</button>
-            </div>
+        <!-- Sample Preview Panel -->
+        <div class="preview-panel" id="previewPanel">
+          <span class="preview-text" id="previewText"
+            >This is a sample preview.</span
+          >
         </div>
 
-        <div id="status" class="status">Options saved!</div>
+        <!-- Save Button -->
+        <div class="form-group">
+          <button type="submit">Save Color Choices</button>
+        </div>
+      </div>
+
+      <div id="status" class="status">Options saved!</div>
     </form>
     <script src="options.js"></script>
-</body>
-
+  </body>
 </html>

@@ -18,6 +18,7 @@
   "scripts": {
     "build": "web-ext build --config=.web-ext-config.cjs",
     "test": "jest",
+    "format": "prettier --write .",
     "version": "node scripts/update-manifest.js && git add manifest.json",
     "start:firefox": "web-ext run",
     "zip:chrome": "node scripts/zip-chrome.js",

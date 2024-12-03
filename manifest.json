@@ -20,25 +20,15 @@
     "page": "options/options.html",
     "open_in_tab": false
   },
-  "permissions": [
-    "storage",
-    "activeTab"
-  ],
+  "permissions": ["storage", "activeTab"],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
+    "scripts": ["background.js"],
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": [
-        "http://*/*",
-        "https://*/*"
-      ],
-      "js": [
-        "content_scripts/sentence-highlight.js"
-      ]
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content_scripts/sentence-highlight.js"]
     }
   ],
   "browser_specific_settings": {

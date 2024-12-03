@@ -3,28 +3,28 @@ name: Release
 on:
   push:
     tags:
-      - 'v*' # Trigger on version tags
+      - "v*" # Trigger on version tags
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required for creating releases
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          
+          node-version: "20"
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Install web-ext
         run: npm install -g web-ext
-        
+
       - name: Build extension
         run: npm run build
 
@@ -36,7 +36,7 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
-          
+
       - name: Publish to Mozilla
         env:
           MOZILLA_JWT_ISSUER: ${{ secrets.MOZILLA_JWT_ISSUER }}
