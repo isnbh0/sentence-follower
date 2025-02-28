@@ -44,7 +44,11 @@
     {
       "resources": [
         "content_scripts/floating-ui.js",
-        "content_scripts/common.js"
+        "content_scripts/common.js",
+        "icons/icon16.png",
+        "icons/icon32.png",
+        "icons/icon48.png",
+        "icons/icon128.png"
       ],
       "matches": ["http://*/*", "https://*/*"]
     }
