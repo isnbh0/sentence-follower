@@ -1,14 +1,4 @@
-const browserAPI =
-  typeof window !== "undefined" && window.browser
-    ? window.browser
-    : typeof chrome !== "undefined"
-    ? chrome
-    : {
-        storage: {
-          local: { get: async () => ({}), set: async () => {} },
-          onChanged: { addListener: () => {} },
-        },
-      };
+// browserAPI is now defined in common.js
 
 const DEBUG = false;
 
@@ -193,6 +183,11 @@ function handleMouseMove(event) {
 
 // Check if the element is eligible for highlighting
 function isElementEligible(element) {
+  // First check if the element is part of the floating UI
+  if (isPartOfFloatingUI(element)) {
+    return false;
+  }
+
   const headers = ["H1", "H2", "H3", "H4", "H5", "H6"];
   const isHeader = headers.includes(element.tagName);
   const editable =
@@ -201,6 +196,12 @@ function isElementEligible(element) {
   const hasTextContent = hasText(element);
 
   return hasTextContent && !editable && !isHeader;
+}
+
+// Check if element is part of the floating UI
+function isPartOfFloatingUI(element) {
+  // Most efficient way to check if this element or any parent has the floating UI data attribute
+  return !!element.closest('[data-sentence-follower-ui="true"]');
 }
 
 // Check if element has meaningful text
@@ -483,6 +484,9 @@ function toggleHighlighter() {
         );
         if (!newEnabledState) {
           removeHighlights();
+        } else {
+          // When enabling via shortcut, also show the floating UI
+          showFloatingUI();
         }
         displayStatusMessage(
           `Sentence Follower ${newEnabledState ? "Enabled" : "Disabled"}`
@@ -585,11 +589,46 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     sendResponse({ success: true });
     return true;
-  } else if (message.action === "updateTabFormatting") {
+  } else if (
+    message.action === "updateTabFormatting" ||
+    message.action === "applyFormatting"
+  ) {
     if (message.formatting) {
       log.info("Tab formatting updated:", message.formatting);
       currentOptions = { ...currentOptions, ...message.formatting };
       applyStyles();
+
+      // If we have an active highlight, reapply it to ensure it uses the new styles
+      if (
+        isEnabled &&
+        document.querySelectorAll(".sentence-highlight").length > 0
+      ) {
+        log.info("Reapplying highlight with new styles");
+        const highlights = Array.from(
+          document.querySelectorAll(".sentence-highlight")
+        );
+        if (highlights.length > 0) {
+          // Store the text content before removing highlights
+          const highlightedText = highlights[0].textContent;
+          // Get the container
+          const container = highlights[0].closest(
+            "p, div, article, section, li"
+          );
+
+          // Remove existing highlights
+          removeHighlights();
+
+          // If we have a container, try to rehighlight the same text
+          if (container && highlightedText) {
+            // Try to find the same text within the container
+            const text = container.textContent;
+            const offset = text.indexOf(highlightedText);
+            if (offset >= 0) {
+              highlightSentence(container, offset);
+            }
+          }
+        }
+      }
     }
 
     sendResponse({ success: true });
@@ -617,6 +656,26 @@ document.addEventListener("DOMContentLoaded", initializeHighlighter);
 // Also try to initialize immediately in case DOMContentLoaded already fired
 initializeHighlighter();
 
+// Show the floating UI
+function showFloatingUI() {
+  // We need to directly communicate with the floating UI via a message
+  // This message will be received by floating-ui.js
+  browserAPI.runtime
+    .sendMessage({ action: "showFloatingUI" })
+    .catch((error) => {
+      console.error("[DEBUG] Content: Error showing floating UI:", error);
+    });
+}
+
+// Hide the floating UI
+function hideFloatingUI() {
+  browserAPI.runtime
+    .sendMessage({ action: "hideFloatingUI" })
+    .catch((error) => {
+      console.error("[DEBUG] Content: Error hiding floating UI:", error);
+    });
+}
+
 // Export functions for testing
 if (
   (typeof process !== "undefined" && process.env.NODE_ENV === "test") ||
@@ -634,5 +693,7 @@ if (
     isEnabled: () => isEnabled,
     handleMouseMove,
     loadOptions,
+    showFloatingUI,
+    hideFloatingUI,
   };
 }
