@@ -40,8 +40,7 @@ module.exports = (env, argv) => {
         patterns: [
           { from: "manifest.json", to: "manifest.json" },
           { from: "icons", to: "icons" },
-          { from: "options/options.html", to: "options/options.html" },
-          { from: "options/options.css", to: "options/options.css" },
+          { from: "options/options.html", to: "options/options.html" }
         ],
       }),
     ],
