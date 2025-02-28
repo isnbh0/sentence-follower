@@ -29,7 +29,7 @@
     "version": "node scripts/update-manifest.js && git add manifest.json",
     "start:firefox": "npm run build:dev && web-ext run",
     "zip:chrome": "npm run build:prod && node scripts/zip-chrome.js",
-    "publish:chrome": "npm run build:prod && node scripts/publish-chrome.js",
+    "publish:chrome": "npm run zip:chrome && node scripts/publish-chrome.js",
     "publish:mozilla": "npm run build:prod && node scripts/publish-mozilla.js",
     "publish": "npm run publish:mozilla && npm run publish:chrome"
   }
