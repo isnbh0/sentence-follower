@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sentence Follower",
-  "version": "0.4.20",
+  "version": "0.5.0",
   "description": "Helps you follow along with long-form text content by identifying and highlighting the sentence under your cursor",
   "icons": {
     "16": "icons/icon16.png",
@@ -20,24 +20,44 @@
     "page": "options/options.html",
     "open_in_tab": false
   },
-  "permissions": ["storage", "activeTab"],
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
   "background": {
-    "scripts": ["background.js"],
+    "scripts": [
+      "background.js"
+    ],
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content_scripts/common.js"],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content_scripts/common.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content_scripts/sentence-highlight.js"]
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content_scripts/sentence-highlight.js"
+      ]
     },
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content_scripts/floating-ui.js"]
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content_scripts/floating-ui.js"
+      ]
     }
   ],
   "web_accessible_resources": [
@@ -50,7 +70,10 @@
         "icons/icon48.png",
         "icons/icon128.png"
       ],
-      "matches": ["http://*/*", "https://*/*"]
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
     }
   ],
   "browser_specific_settings": {
