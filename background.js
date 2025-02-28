@@ -61,6 +61,103 @@ browserAPI.tabs.onRemoved.addListener((tabId) => {
   }
 });
 
+// Storage key for the floating UI state
+const FLOATING_UI_STATE_KEY = "floatingUIState";
+
+// Function to get the floating UI state from storage
+async function getFloatingUIState() {
+  console.log(
+    `[FloatingUI:Position:BG] Getting floating UI state from storage`
+  );
+  try {
+    const result = await browserAPI.storage.local.get(FLOATING_UI_STATE_KEY);
+    const state = result[FLOATING_UI_STATE_KEY] || {
+      isVisible: false,
+      isMinimized: false,
+      position: null,
+    };
+    console.log(
+      `[FloatingUI:Position:BG] Retrieved state from storage:`,
+      state
+    );
+    console.log(`[FloatingUI:Position:BG] Position data:`, state.position);
+    return state;
+  } catch (error) {
+    console.error(
+      `[FloatingUI:Position:BG] Error getting state from storage:`,
+      error
+    );
+    return {
+      isVisible: false,
+      isMinimized: false,
+      position: null,
+    };
+  }
+}
+
+// Function to save the floating UI state to storage
+async function setFloatingUIState(updates) {
+  console.log(
+    `[FloatingUI:Position:BG] Setting floating UI state with updates:`,
+    updates
+  );
+
+  try {
+    // First get current state
+    const currentState = await getFloatingUIState();
+    console.log(
+      `[FloatingUI:Position:BG] Current state before update:`,
+      currentState
+    );
+
+    // Merge with updates
+    const newState = { ...currentState };
+
+    // Update position if provided
+    if (updates.position) {
+      console.log(
+        `[FloatingUI:Position:BG] Updating position to:`,
+        updates.position
+      );
+      newState.position = updates.position;
+    }
+
+    // Update visibility if provided
+    if (updates.hasOwnProperty("isVisible")) {
+      console.log(
+        `[FloatingUI:Position:BG] Updating visibility to:`,
+        updates.isVisible
+      );
+      newState.isVisible = updates.isVisible;
+    }
+
+    // Update minimized state if provided
+    if (updates.hasOwnProperty("isMinimized")) {
+      console.log(
+        `[FloatingUI:Position:BG] Updating minimized state to:`,
+        updates.isMinimized
+      );
+      newState.isMinimized = updates.isMinimized;
+    }
+
+    console.log(
+      `[FloatingUI:Position:BG] Saving new state to storage:`,
+      newState
+    );
+
+    // Save to storage
+    await browserAPI.storage.local.set({ [FLOATING_UI_STATE_KEY]: newState });
+    console.log(`[FloatingUI:Position:BG] Successfully saved state to storage`);
+    return true;
+  } catch (error) {
+    console.error(
+      `[FloatingUI:Position:BG] Error saving state to storage:`,
+      error
+    );
+    return false;
+  }
+}
+
 // Periodically check for any stale tabs in the map (runs every hour)
 setInterval(() => {
   console.log(
@@ -122,7 +219,57 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
     message
   );
 
-  if (message.action === "reloadOptions") {
+  if (message.action === "getFloatingUIState") {
+    console.log(`[FloatingUI:Position:BG] Received getFloatingUIState request`);
+    getFloatingUIState()
+      .then((state) => {
+        console.log(
+          `[FloatingUI:Position:BG] Sending back floating UI state:`,
+          state
+        );
+        sendResponse(state);
+      })
+      .catch((error) => {
+        console.error(
+          `[FloatingUI:Position:BG] Error getting floating UI state:`,
+          error
+        );
+        sendResponse(null);
+      });
+    return true; // Keep the channel open for the async response
+  } else if (message.action === "setFloatingUIState") {
+    console.log(
+      `[FloatingUI:Position:BG] Received setFloatingUIState with data:`,
+      message
+    );
+    const updates = {
+      position: message.position,
+      isVisible: message.isVisible,
+      isMinimized: message.isMinimized,
+    };
+
+    // Only include properties that exist in the message
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+
+    setFloatingUIState(cleanUpdates)
+      .then((success) => {
+        console.log(
+          `[FloatingUI:Position:BG] setFloatingUIState result:`,
+          success
+        );
+        sendResponse({ success });
+      })
+      .catch((error) => {
+        console.error(
+          `[FloatingUI:Position:BG] Error setting floating UI state:`,
+          error
+        );
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Keep the channel open for the async response
+  } else if (message.action === "reloadOptions") {
     // This is now a no-op since options are per-tab and loaded on demand
     sendResponse({ success: true });
   } else if (message.action === "getTabEnabled") {
@@ -293,8 +440,8 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .sendMessage({
         action: broadcastAction,
         ...message, // Include all original properties
-          })
-          .catch((error) => {
+      })
+      .catch((error) => {
         console.log(`[DEBUG] Background: Error forwarding message: ${error}`);
       });
 

@@ -31,8 +31,13 @@ function initFloatingUI() {
   floatingUIContainer.id = "sentence-follower-floating-ui";
   floatingUIContainer.setAttribute("data-sentence-follower-ui", "true"); // Add data attribute for easier detection
   floatingUIContainer.style.position = "fixed";
+
+  // Always set the initial position to the default values
+  // This ensures a consistent starting position when first created
   floatingUIContainer.style.top = DEFAULT_POSITION.top;
   floatingUIContainer.style.right = DEFAULT_POSITION.right;
+  floatingUIContainer.style.left = "auto"; // Default to auto
+
   floatingUIContainer.style.backgroundColor = "#fff";
   floatingUIContainer.style.borderRadius = "8px";
   floatingUIContainer.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)";
@@ -323,6 +328,9 @@ function initFloatingUI() {
 
   // Initialize color swatches
   updateColorSwatches();
+
+  // Check if the floating UI should be visible based on persisted state
+  restoreFloatingUIState();
 }
 
 // Single set of colors for both background and text (same order)
@@ -668,13 +676,43 @@ function dragMove(e) {
   const deltaY = e.clientY - dragStartY;
 
   // Update position
-  floatingUIContainer.style.left = `${initialPositionX + deltaX}px`;
-  floatingUIContainer.style.top = `${initialPositionY + deltaY}px`;
+  const newLeft = `${initialPositionX + deltaX}px`;
+  const newTop = `${initialPositionY + deltaY}px`;
+
+  floatingUIContainer.style.left = newLeft;
+  floatingUIContainer.style.top = newTop;
   // Remove right positioning when manually positioned
   floatingUIContainer.style.right = "auto";
+
+  // Periodically log position during drag (not on every move to avoid console spam)
+  if (Math.random() < 0.05) {
+    // Only log occasionally during drag
+    console.log("[FloatingUI:Position] During drag, position updated to:", {
+      left: newLeft,
+      top: newTop,
+      right: "auto",
+    });
+  }
 }
 
 function endDrag() {
+  if (isDragging) {
+    // Get final position after drag
+    const rect = floatingUIContainer.getBoundingClientRect();
+    console.log("[FloatingUI:Position] Drag ended, final position:", {
+      top: rect.top,
+      left: rect.left,
+      right: rect.right,
+      bottom: rect.bottom,
+      styleTop: floatingUIContainer.style.top,
+      styleLeft: floatingUIContainer.style.left,
+      styleRight: floatingUIContainer.style.right,
+    });
+
+    // Save position when drag ends
+    saveCurrentPosition();
+  }
+
   isDragging = false;
   document.removeEventListener("mousemove", dragMove);
   document.removeEventListener("mouseup", endDrag);
@@ -684,70 +722,121 @@ function endDrag() {
 function minimizeFloatingUI() {
   if (!floatingUIContainer || isMinimized) return;
 
-  isMinimized = true;
+  // Use the function that doesn't persist state
+  minimizeFloatingUIWithoutPersisting();
 
-  // Hide all content elements
-  for (const element of contentElements) {
-    element.style.display = "none";
-  }
-
-  // Update header style
-  const header = floatingUIContainer.querySelector("#floating-ui-header");
-  if (header) {
-    header.style.marginBottom = "0";
-    header.style.paddingBottom = "0";
-    header.style.borderBottom = "none";
-  }
-
-  // Update minimize button to show expand symbol
-  const minimizeBtn = header.querySelector("button[title='Minimize']");
-  if (minimizeBtn) {
-    minimizeBtn.textContent = "+";
-    minimizeBtn.title = "Expand";
-  }
-
-  // Make the header more compact
-  floatingUIContainer.style.paddingBottom = "6px";
-
-  // Remove width changes to maintain consistent width
+  // Persist the floating UI state
+  persistFloatingUIState();
 }
 
-// Expand the minimized floating UI
+// Expand the floating UI
 function expandFloatingUI() {
   if (!floatingUIContainer || !isMinimized) return;
 
-  isMinimized = false;
+  // Use the function that doesn't persist state
+  expandFloatingUIWithoutPersisting();
 
-  // Show all content elements
-  for (const element of contentElements) {
-    element.style.display = "block";
-  }
-
-  // Restore header style
-  const header = floatingUIContainer.querySelector("#floating-ui-header");
-  if (header) {
-    header.style.marginBottom = "10px";
-    header.style.paddingBottom = "8px";
-    header.style.borderBottom = "1px solid #eee";
-  }
-
-  // Update minimize button back to minimize symbol
-  const minimizeBtn = header.querySelector("button[title='Expand']");
-  if (minimizeBtn) {
-    minimizeBtn.textContent = "−";
-    minimizeBtn.title = "Minimize";
-  }
-
-  // Restore original padding but keep width consistent
-  floatingUIContainer.style.paddingBottom = "10px";
+  // Persist the floating UI state
+  persistFloatingUIState();
 }
 
 // Show the floating UI
 function showFloatingUI(settings) {
+  console.log("[FloatingUI:Position] showFloatingUI called, initializing UI");
   initFloatingUI(); // Ensure it's initialized
   isFloatingUIVisible = true;
   floatingUIContainer.style.display = "block";
 
+  // First check if we have a saved position, then apply it
+  browserAPI.runtime
+    .sendMessage({ action: "getFloatingUIState" })
+    .then((response) => {
+      console.log(
+        "[FloatingUI:Position] Retrieved state from storage:",
+        response
+      );
+
+      if (
+        response &&
+        response.position &&
+        response.position.top &&
+        response.position.top !== "0px" &&
+        (response.position.right !== "0px" || response.position.left !== "0px")
+      ) {
+        console.log(
+          "[FloatingUI:Position] Restoring saved position:",
+          response.position
+        );
+        applyPosition(response.position);
+      } else {
+        // Fallback: check if the UI is in the corner and reset if needed
+        const rect = floatingUIContainer.getBoundingClientRect();
+        console.log("[FloatingUI:Position] Current UI position rect:", {
+          top: rect.top,
+          left: rect.left,
+          bottom: rect.bottom,
+          right: rect.right,
+        });
+
+        if (rect.top < 10 && rect.left < 10) {
+          console.log(
+            "[FloatingUI:Position] UI is in corner, resetting to default position"
+          );
+          applyPosition({
+            top: DEFAULT_POSITION.top,
+            right: DEFAULT_POSITION.right,
+            left: "auto",
+          });
+        } else {
+          console.log(
+            "[FloatingUI:Position] UI position seems valid, keeping current position"
+          );
+        }
+      }
+
+      // Continue with the rest of the function
+      continueShowingUI(settings);
+    })
+    .catch((error) => {
+      console.error(
+        "[FloatingUI:Position] Error getting stored position:",
+        error
+      );
+
+      // Fallback to simple corner check
+      const rect = floatingUIContainer.getBoundingClientRect();
+      console.log(
+        "[FloatingUI:Position] Current UI position (fallback check):",
+        {
+          top: rect.top,
+          left: rect.left,
+          bottom: rect.bottom,
+          right: rect.right,
+        }
+      );
+
+      if (rect.top < 10 && rect.left < 10) {
+        console.log(
+          "[FloatingUI:Position] UI is in corner (fallback), resetting to default"
+        );
+        applyPosition({
+          top: DEFAULT_POSITION.top,
+          right: DEFAULT_POSITION.right,
+          left: "auto",
+        });
+      } else {
+        console.log(
+          "[FloatingUI:Position] UI position seems valid in fallback, keeping current"
+        );
+      }
+
+      // Continue with the rest of the function
+      continueShowingUI(settings);
+    });
+}
+
+// Continue showing UI after position is determined
+function continueShowingUI(settings) {
   // If it was minimized before hiding, expand it
   if (isMinimized) {
     expandFloatingUI();
@@ -813,6 +902,9 @@ function showFloatingUI(settings) {
     updateFloatingUIState();
   }
 
+  // Persist the floating UI state
+  persistFloatingUIState();
+
   // Notify options page that floating UI is now visible
   notifyFloatingUIVisibilityChange(true);
 }
@@ -822,6 +914,9 @@ function hideFloatingUI() {
   if (floatingUIContainer) {
     isFloatingUIVisible = false;
     floatingUIContainer.style.display = "none";
+
+    // Persist visibility state while keeping existing position
+    persistFloatingUIState();
 
     // Notify options page that floating UI is now hidden
     notifyFloatingUIVisibilityChange(false);
@@ -954,6 +1049,405 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false;
 });
 
+// Function to restore the floating UI state from background storage
+function restoreFloatingUIState() {
+  console.log(
+    "[FloatingUI:Position] Restoring floating UI state from background storage"
+  );
+
+  browserAPI.runtime
+    .sendMessage({ action: "getFloatingUIState" })
+    .then((response) => {
+      console.log(
+        "[FloatingUI:Position] Got saved floating UI state:",
+        response
+      );
+
+      if (response) {
+        // Apply saved position if available and valid
+        if (
+          response.position &&
+          response.position.top &&
+          response.position.top !== "0px" &&
+          (response.position.right !== "0px" ||
+            response.position.left !== "0px")
+        ) {
+          console.log(
+            "[FloatingUI:Position] Applying saved position:",
+            response.position
+          );
+          applyPosition(response.position);
+        } else {
+          // Apply default position if saved position is invalid
+          console.log(
+            "[FloatingUI:Position] No valid position found, using default"
+          );
+          console.log(
+            "[FloatingUI:Position] Saved position was:",
+            response.position
+          );
+          applyPosition({
+            top: DEFAULT_POSITION.top,
+            right: DEFAULT_POSITION.right,
+            left: "auto",
+          });
+        }
+
+        // Apply saved visibility state
+        if (response.isVisible === true) {
+          console.log("[FloatingUI:Position] Restoring visible state");
+          // We need to show the UI without updating the persisted state
+          // to prevent an infinite loop
+          showFloatingUIWithoutPersisting();
+
+          // Also apply minimized state if needed
+          if (response.isMinimized === true) {
+            console.log("[FloatingUI:Position] Restoring minimized state");
+            minimizeFloatingUIWithoutPersisting();
+          }
+        } else {
+          // Make sure the UI stays hidden but keeps its position
+          console.log(
+            "[FloatingUI:Position] Keeping UI hidden per saved state"
+          );
+          isFloatingUIVisible = false;
+          floatingUIContainer.style.display = "none";
+        }
+      } else {
+        // No state found, keep UI hidden by default
+        console.log(
+          "[FloatingUI:Position] No saved state found, keeping UI hidden"
+        );
+        isFloatingUIVisible = false;
+        floatingUIContainer.style.display = "none";
+      }
+    })
+    .catch((error) => {
+      console.error(
+        "[FloatingUI:Position] Error getting floating UI state:",
+        error
+      );
+    });
+}
+
+// Show the floating UI without updating persisted state
+function showFloatingUIWithoutPersisting() {
+  console.log("[FloatingUI:Position] showFloatingUIWithoutPersisting called");
+  initFloatingUI(); // Ensure it's initialized
+  isFloatingUIVisible = true;
+  floatingUIContainer.style.display = "block";
+
+  // Position is not modified here - we rely on the caller to set position correctly
+  // before calling this function
+  console.log(
+    "[FloatingUI:Position] Current position in showFloatingUIWithoutPersisting:",
+    {
+      top: floatingUIContainer.style.top,
+      left: floatingUIContainer.style.left,
+      right: floatingUIContainer.style.right,
+    }
+  );
+
+  // Apply current settings
+  updateFloatingUIState();
+
+  // Notify options page that floating UI is now visible
+  notifyFloatingUIVisibilityChange(true);
+}
+
+// Minimize the floating UI without updating persisted state
+function minimizeFloatingUIWithoutPersisting() {
+  if (!floatingUIContainer || isMinimized) return;
+
+  isMinimized = true;
+
+  // Hide all content elements
+  for (const element of contentElements) {
+    element.style.display = "none";
+  }
+
+  // Update header style
+  const header = floatingUIContainer.querySelector("#floating-ui-header");
+  if (header) {
+    header.style.marginBottom = "0";
+    header.style.paddingBottom = "0";
+    header.style.borderBottom = "none";
+  }
+
+  // Update minimize button to show expand symbol
+  const minimizeBtn = header.querySelector("button[title='Minimize']");
+  if (minimizeBtn) {
+    minimizeBtn.textContent = "+";
+    minimizeBtn.title = "Expand";
+  }
+
+  // Make the header more compact
+  floatingUIContainer.style.paddingBottom = "6px";
+
+  // Remove width changes to maintain consistent width
+}
+
+// Expand the floating UI without updating persisted state
+function expandFloatingUIWithoutPersisting() {
+  if (!floatingUIContainer || !isMinimized) return;
+
+  isMinimized = false;
+
+  // Show all content elements
+  for (const element of contentElements) {
+    element.style.display = "block";
+  }
+
+  // Update header style back to normal
+  const header = floatingUIContainer.querySelector("#floating-ui-header");
+  if (header) {
+    header.style.marginBottom = "10px";
+    header.style.paddingBottom = "8px";
+    header.style.borderBottom = "1px solid #eee";
+  }
+
+  // Update minimize button back to minimize symbol
+  const minimizeBtn = header.querySelector("button[title='Expand']");
+  if (minimizeBtn) {
+    minimizeBtn.textContent = "−";
+    minimizeBtn.title = "Minimize";
+  }
+
+  // Restore normal padding
+  floatingUIContainer.style.paddingBottom = "10px";
+}
+
+// Persist the current floating UI state
+function persistFloatingUIState() {
+  // Get current position if the UI is visible and available
+  let position = null;
+  if (floatingUIContainer) {
+    if (isFloatingUIVisible) {
+      // If visible, get current position from element
+      const rect = floatingUIContainer.getBoundingClientRect();
+      position = {
+        top: `${rect.top}px`,
+        left: `${rect.left}px`,
+        right: floatingUIContainer.style.right,
+      };
+      console.log(
+        "[FloatingUI:Position] Saving current position while visible:",
+        position
+      );
+    } else {
+      // If hiding, don't update position - we'll query existing position instead
+      console.log(
+        "[FloatingUI:Position] UI is being hidden, preserving existing position"
+      );
+      browserAPI.runtime
+        .sendMessage({ action: "getFloatingUIState" })
+        .then((response) => {
+          // If we already have a stored position, use that
+          if (response && response.position) {
+            console.log(
+              "[FloatingUI:Position] Preserving existing position when hiding UI:",
+              response.position
+            );
+
+            // Now send complete update with existing position
+            browserAPI.runtime
+              .sendMessage({
+                action: "setFloatingUIState",
+                isVisible: isFloatingUIVisible,
+                isMinimized: isMinimized,
+                position: response.position,
+              })
+              .then(() => {
+                console.log(
+                  "[FloatingUI:Position] Successfully preserved position while hiding"
+                );
+              })
+              .catch((error) => {
+                console.error(
+                  "[FloatingUI:Position] Error preserving position when hiding:",
+                  error
+                );
+              });
+          } else {
+            // No position stored yet, just update without position
+            console.log(
+              "[FloatingUI:Position] No previous position found when hiding"
+            );
+            browserAPI.runtime
+              .sendMessage({
+                action: "setFloatingUIState",
+                isVisible: isFloatingUIVisible,
+                isMinimized: isMinimized,
+              })
+              .then(() => {
+                console.log(
+                  "[FloatingUI:Position] Saved state without position while hiding"
+                );
+              })
+              .catch((error) => {
+                console.error(
+                  "[FloatingUI:Position] Error updating state without position:",
+                  error
+                );
+              });
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "[FloatingUI:Position] Error getting existing position:",
+            error
+          );
+        });
+
+      // Return early since we're handling the API call in the promise chain
+      return;
+    }
+  }
+
+  console.log("[FloatingUI:Position] Persisting floating UI state:", {
+    isVisible: isFloatingUIVisible,
+    isMinimized: isMinimized,
+    position: position,
+  });
+
+  browserAPI.runtime
+    .sendMessage({
+      action: "setFloatingUIState",
+      isVisible: isFloatingUIVisible,
+      isMinimized: isMinimized,
+      position: position,
+    })
+    .then(() => {
+      console.log(
+        "[FloatingUI:Position] Successfully saved state with position:",
+        position
+      );
+    })
+    .catch((error) => {
+      console.error(
+        "[FloatingUI:Position] Error persisting floating UI state:",
+        error
+      );
+    });
+}
+
+// Apply position to the floating UI
+function applyPosition(position) {
+  if (!floatingUIContainer || !position) {
+    console.log(
+      "[FloatingUI:Position] Cannot apply position - container or position missing",
+      {
+        containerExists: !!floatingUIContainer,
+        positionProvided: !!position,
+      }
+    );
+    return;
+  }
+
+  console.log(
+    "[FloatingUI:Position] Before applying position, current styles:",
+    {
+      top: floatingUIContainer.style.top,
+      right: floatingUIContainer.style.right,
+      left: floatingUIContainer.style.left,
+    }
+  );
+
+  console.log("[FloatingUI:Position] Applying position:", position);
+
+  // Apply each position property if available
+  if (position.top !== undefined) {
+    floatingUIContainer.style.top = position.top;
+  }
+
+  if (position.right !== undefined) {
+    floatingUIContainer.style.right = position.right;
+  }
+
+  if (position.left !== undefined) {
+    floatingUIContainer.style.left = position.left;
+  }
+
+  console.log(
+    "[FloatingUI:Position] After applying position, updated styles:",
+    {
+      top: floatingUIContainer.style.top,
+      right: floatingUIContainer.style.right,
+      left: floatingUIContainer.style.left,
+    }
+  );
+
+  // Verify with getBoundingClientRect for absolute screen position
+  const rect = floatingUIContainer.getBoundingClientRect();
+  console.log(
+    "[FloatingUI:Position] Actual screen position after applying styles:",
+    {
+      top: rect.top,
+      left: rect.left,
+      right: rect.right,
+      bottom: rect.bottom,
+    }
+  );
+}
+
+// Save current position to be persisted
+function saveCurrentPosition() {
+  if (!floatingUIContainer) {
+    console.log(
+      "[FloatingUI:Position] Cannot save position - container missing"
+    );
+    return;
+  }
+
+  const rect = floatingUIContainer.getBoundingClientRect();
+  const position = {
+    top: `${rect.top}px`,
+    left: `${rect.left}px`,
+    right: "auto", // Clear right positioning when manually positioned
+  };
+
+  console.log(
+    "[FloatingUI:Position] Saving current position from drag:",
+    position
+  );
+  console.log("[FloatingUI:Position] Current element styles:", {
+    top: floatingUIContainer.style.top,
+    left: floatingUIContainer.style.left,
+    right: floatingUIContainer.style.right,
+  });
+
+  // Update our floating UI state with the new position
+  persistFloatingUIPosition(position);
+}
+
+// Persist just the position of the floating UI
+function persistFloatingUIPosition(position) {
+  if (!position) {
+    console.log("[FloatingUI:Position] Cannot persist null position");
+    return;
+  }
+
+  console.log(
+    "[FloatingUI:Position] Persisting floating UI position:",
+    position
+  );
+
+  browserAPI.runtime
+    .sendMessage({
+      action: "setFloatingUIState",
+      position: position,
+    })
+    .then(() => {
+      console.log(
+        "[FloatingUI:Position] Successfully saved position to storage:",
+        position
+      );
+    })
+    .catch((error) => {
+      console.error("[FloatingUI:Position] Error persisting position:", error);
+    });
+}
+
 // Export functions for use in other scripts
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
@@ -963,6 +1457,11 @@ if (typeof module !== "undefined" && module.exports) {
     minimizeFloatingUI,
     expandFloatingUI,
     updateFloatingUIState,
+    persistFloatingUIState,
+    restoreFloatingUIState,
+    saveCurrentPosition,
+    applyPosition,
+    continueShowingUI,
   };
 }
 
