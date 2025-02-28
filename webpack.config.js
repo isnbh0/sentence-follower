@@ -8,6 +8,10 @@ module.exports = (env, argv) => {
   // Determine if we're in production mode
   const isProduction = argv.mode === "production";
 
+  console.log(
+    `Building in ${isProduction ? "production" : "development"} mode`
+  );
+
   return {
     entry: {
       background: "./background.js",
@@ -25,11 +29,12 @@ module.exports = (env, argv) => {
     plugins: [
       new CleanWebpackPlugin(),
       new webpack.DefinePlugin({
-        // Replace IS_DEBUG in the code with the appropriate value
-        "process.env.IS_DEBUG": JSON.stringify(!isProduction),
-        "process.env.VERSION": JSON.stringify(
-          require("./package.json").version
-        ),
+        // Make sure process.env is defined with fallbacks to prevent errors
+        "process.env": {
+          // Replace IS_DEBUG in the code with the appropriate value
+          IS_DEBUG: JSON.stringify(!isProduction),
+          VERSION: JSON.stringify(require("./package.json").version),
+        },
       }),
       new CopyPlugin({
         patterns: [

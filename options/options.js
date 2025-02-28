@@ -742,7 +742,7 @@ function showFloatingUIAndClosePopup() {
             // Send a message to the tab to show the floating UI with current settings
             browserAPI.tabs
               .sendMessage(activeTab.id, {
-                action: "showFloatingUI",
+                action: "showFloatingUIPreserveState",
                 formatting: formatting,
                 enabled: enabled,
               })
@@ -752,7 +752,7 @@ function showFloatingUIAndClosePopup() {
               })
               .catch((error) => {
                 console.error(
-                  "[DEBUG] Popup: Error sending showFloatingUI message:",
+                  "[DEBUG] Popup: Error sending showFloatingUIPreserveState message:",
                   error
                 );
               });
@@ -766,7 +766,7 @@ function showFloatingUIAndClosePopup() {
             // Fall back to just showing floating UI without explicit settings
             browserAPI.tabs
               .sendMessage(activeTab.id, {
-                action: "showFloatingUI",
+                action: "showFloatingUIPreserveState",
               })
               .then(() => {
                 // Close the popup
@@ -774,7 +774,7 @@ function showFloatingUIAndClosePopup() {
               })
               .catch((error) => {
                 console.error(
-                  "[DEBUG] Popup: Error sending showFloatingUI message:",
+                  "[DEBUG] Popup: Error sending showFloatingUIPreserveState message:",
                   error
                 );
               });
@@ -824,20 +824,20 @@ function showFloatingUI() {
             // Send a message to the tab to show the floating UI with current settings
             browserAPI.tabs
               .sendMessage(activeTab.id, {
-                action: "showFloatingUI",
+                action: "showFloatingUIPreserveState",
                 formatting: formatting,
                 enabled: enabled,
               })
               .then(() => {
                 console.log(
-                  "[DEBUG] Popup: Sent showFloatingUI message to tab with settings"
+                  "[DEBUG] Popup: Sent showFloatingUIPreserveState message to tab with settings"
                 );
                 // Update UI based on floating UI visibility
                 updateUIBasedOnFloatingVisibility();
               })
               .catch((error) => {
                 console.error(
-                  "[DEBUG] Popup: Error sending showFloatingUI message:",
+                  "[DEBUG] Popup: Error sending showFloatingUIPreserveState message:",
                   error
                 );
               });
@@ -851,7 +851,7 @@ function showFloatingUI() {
             // Fall back to just showing floating UI without explicit settings
             browserAPI.tabs
               .sendMessage(activeTab.id, {
-                action: "showFloatingUI",
+                action: "showFloatingUIPreserveState",
               })
               .then(() => {
                 // Update UI based on floating UI visibility
@@ -861,7 +861,7 @@ function showFloatingUI() {
               })
               .catch((error) => {
                 console.error(
-                  "[DEBUG] Popup: Error sending showFloatingUI message:",
+                  "[DEBUG] Popup: Error sending showFloatingUIPreserveState message:",
                   error
                 );
               });

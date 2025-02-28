@@ -18,21 +18,31 @@ const browserAPI =
           sendMessage: async () => {},
           onMessage: { addListener: () => {} },
         },
+        // Add tabs API to prevent errors in floating-ui.js
+        tabs: {
+          query: async () => [],
+          // Add other commonly used methods with safe defaults
+          sendMessage: async () => {},
+          create: async () => ({}),
+          update: async () => {},
+        },
       };
 
-// Import log utility if not already available
-if (typeof log === "undefined") {
-  // This will be defined after logging.js is loaded
-  // Fallback for when logging.js hasn't loaded yet
+// Create a dummy log function if logging.js hasn't loaded yet
+if (typeof window.log === "undefined") {
   window.log = {
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
+    info: (module, ...args) => console.log(`[${module}]`, ...args),
+    warn: (module, ...args) => console.warn(`[${module}]`, ...args),
+    error: (module, ...args) => console.error(`[${module}]`, ...args),
+    debug: (module, ...args) => console.log(`[DEBUG:${module}]`, ...args),
   };
 }
 
-log.info("Common", "browserAPI initialized and available for other scripts");
+// Now we can safely use log
+window.log.info(
+  "Common",
+  "browserAPI initialized and available for other scripts"
+);
 
 // Export for module environments
 if (typeof module !== "undefined" && module.exports) {

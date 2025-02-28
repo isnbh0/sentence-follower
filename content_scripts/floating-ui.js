@@ -837,10 +837,12 @@ function showFloatingUI(settings) {
 
 // Continue showing UI after position is determined
 function continueShowingUI(settings) {
-  // If it was minimized before hiding, expand it
-  if (isMinimized) {
-    expandFloatingUI();
-  }
+  // Don't automatically expand the UI if it was minimized
+  // This allows showFloatingUIPreserveState to maintain the minimized state
+  // This section is intentionally commented out:
+  // if (isMinimized) {
+  //   expandFloatingUI();
+  // }
 
   // Apply settings if provided
   if (settings) {
@@ -940,12 +942,46 @@ function toggleFloatingUI() {
   }
 }
 
+// Show the floating UI while preserving its current minimized state
+function showFloatingUIPreserveState(settings) {
+  console.log("[FloatingUI:Position] showFloatingUIPreserveState called");
+
+  // First check if we have a saved state with minimization information
+  browserAPI.runtime
+    .sendMessage({ action: "getCurrentTabFloatingUIState" })
+    .then((response) => {
+      console.log(
+        "[FloatingUI:Position] Retrieved state for preserve state call:",
+        response
+      );
+
+      // Show the UI with the minimized state preserved (modified continueShowingUI will not expand)
+      showFloatingUI(settings);
+
+      // If we have a saved state with isMinimized=true, ensure the UI is minimized
+      if (response && response.isMinimized === true && !isMinimized) {
+        console.log("[FloatingUI:Position] Re-applying minimized state");
+        setTimeout(() => {
+          minimizeFloatingUI();
+        }, 50); // Small delay to ensure UI is visible first
+      }
+    })
+    .catch((error) => {
+      console.error(
+        "[FloatingUI:Position] Error getting state for preserve call:",
+        error
+      );
+      // Fallback to regular show
+      showFloatingUI(settings);
+    });
+}
+
 // Listen for messages from the background script
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("[FloatingUI] Received message:", message);
 
-  if (message.action === "showFloatingUI") {
-    console.log("[FloatingUI] Showing floating UI");
+  if (message.action === "showFloatingUIPreserveState") {
+    console.log("[FloatingUI] Showing floating UI with preserved state");
 
     // Extract settings if provided
     const settings = {
@@ -953,7 +989,8 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
       enabled: message.enabled,
     };
 
-    showFloatingUI(settings);
+    // Show UI with preserved state
+    showFloatingUIPreserveState(settings);
     sendResponse({ success: true });
     return true;
   } else if (message.action === "hideFloatingUI") {
@@ -1055,11 +1092,15 @@ function restoreFloatingUIState() {
     "[FloatingUI:Position] Restoring floating UI state from background storage"
   );
 
+  // Instead of directly accessing browserAPI.tabs, we'll send a message to the background script
+  // to get the current tab's state. This works even when tabs API isn't directly available
   browserAPI.runtime
-    .sendMessage({ action: "getFloatingUIState" })
+    .sendMessage({
+      action: "getCurrentTabFloatingUIState",
+    })
     .then((response) => {
       console.log(
-        "[FloatingUI:Position] Got saved floating UI state:",
+        "[FloatingUI:Position] Got saved floating UI state from background:",
         response
       );
 
@@ -1127,6 +1168,16 @@ function restoreFloatingUIState() {
         "[FloatingUI:Position] Error getting floating UI state:",
         error
       );
+      // Apply defaults in case of error
+      applyPosition({
+        top: DEFAULT_POSITION.top,
+        right: DEFAULT_POSITION.right,
+        left: "auto",
+      });
+      isFloatingUIVisible = false;
+      if (floatingUIContainer) {
+        floatingUIContainer.style.display = "none";
+      }
     });
 }
 
@@ -1235,12 +1286,12 @@ function persistFloatingUIState() {
         position
       );
     } else {
-      // If hiding, don't update position - we'll query existing position instead
-      console.log(
-        "[FloatingUI:Position] UI is being hidden, preserving existing position"
-      );
+      // If hiding, we need to preserve the existing position
+      // Send a message to get the current state first
       browserAPI.runtime
-        .sendMessage({ action: "getFloatingUIState" })
+        .sendMessage({
+          action: "getCurrentTabFloatingUIState",
+        })
         .then((response) => {
           // If we already have a stored position, use that
           if (response && response.position) {
@@ -1252,10 +1303,12 @@ function persistFloatingUIState() {
             // Now send complete update with existing position
             browserAPI.runtime
               .sendMessage({
-                action: "setFloatingUIState",
-                isVisible: isFloatingUIVisible,
-                isMinimized: isMinimized,
-                position: response.position,
+                action: "setCurrentTabFloatingUIState",
+                state: {
+                  isVisible: isFloatingUIVisible,
+                  isMinimized: isMinimized,
+                  position: response.position,
+                },
               })
               .then(() => {
                 console.log(
@@ -1275,9 +1328,11 @@ function persistFloatingUIState() {
             );
             browserAPI.runtime
               .sendMessage({
-                action: "setFloatingUIState",
-                isVisible: isFloatingUIVisible,
-                isMinimized: isMinimized,
+                action: "setCurrentTabFloatingUIState",
+                state: {
+                  isVisible: isFloatingUIVisible,
+                  isMinimized: isMinimized,
+                },
               })
               .then(() => {
                 console.log(
@@ -1310,12 +1365,15 @@ function persistFloatingUIState() {
     position: position,
   });
 
+  // Use message passing to update the state via the background script
   browserAPI.runtime
     .sendMessage({
-      action: "setFloatingUIState",
-      isVisible: isFloatingUIVisible,
-      isMinimized: isMinimized,
-      position: position,
+      action: "setCurrentTabFloatingUIState",
+      state: {
+        isVisible: isFloatingUIVisible,
+        isMinimized: isMinimized,
+        position: position,
+      },
     })
     .then(() => {
       console.log(
@@ -1432,10 +1490,13 @@ function persistFloatingUIPosition(position) {
     position
   );
 
+  // Use message passing to update just the position via the background script
   browserAPI.runtime
     .sendMessage({
-      action: "setFloatingUIState",
-      position: position,
+      action: "setCurrentTabFloatingUIState",
+      state: {
+        position: position,
+      },
     })
     .then(() => {
       console.log(
@@ -1462,6 +1523,7 @@ if (typeof module !== "undefined" && module.exports) {
     saveCurrentPosition,
     applyPosition,
     continueShowingUI,
+    showFloatingUIPreserveState,
   };
 }
 

@@ -7,7 +7,13 @@
 // This will be replaced at build time by webpack's DefinePlugin
 // In development: IS_DEBUG = true
 // In production: IS_DEBUG = false
-const IS_DEBUG = process.env.IS_DEBUG;
+// Add a fallback for direct Chrome testing where process is not defined
+const IS_DEBUG =
+  typeof process !== "undefined" &&
+  process.env &&
+  process.env.IS_DEBUG !== undefined
+    ? process.env.IS_DEBUG
+    : true; // Default to true when testing directly in browser
 
 /**
  * Log utility with various levels
