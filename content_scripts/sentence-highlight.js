@@ -1,11 +1,12 @@
 // browserAPI is now defined in common.js
 
-const DEBUG = false;
-
-const log = {
-  info: (...args) => DEBUG && console.log(...args),
-  error: (...args) => DEBUG && console.error(...args),
-};
+// Remove local DEBUG flag and log utility as we'll use the centralized one from logging.js
+// const DEBUG = false;
+//
+// const log = {
+//   info: (...args) => DEBUG && console.log(...args),
+//   error: (...args) => DEBUG && console.error(...args),
+// };
 
 const DEFAULT_OPTIONS = {
   backgroundColor: "#ffff00",
@@ -48,23 +49,24 @@ function initializeHighlighter() {
 
 // Check if highlighting is enabled for this tab
 function checkTabEnabledState() {
-  console.log(`[DEBUG] Content: checkTabEnabledState called`);
+  log.debug("Content", "checkTabEnabledState called");
+
   browserAPI.runtime
     .sendMessage({ action: "getTabEnabled" })
     .then((response) => {
-      console.log(
-        `[DEBUG] Content: Got response from getTabEnabled:`,
-        response
-      );
-      isEnabled = response && response.enabled === true;
-      // Add a small delay before logging to ensure message response has completed
-      setTimeout(() => {
-        console.log(`[DEBUG] Content: Tab enabled state set to: ${isEnabled}`);
-      }, 50);
+      if (response) {
+        log.debug("Content", "Got response from getTabEnabled:", response);
+
+        isEnabled = !!response.enabled;
+        log.debug("Content", `Tab enabled state set to: ${isEnabled}`);
+
+        if (isEnabled) {
+          initializeHighlighter();
+        }
+      }
     })
     .catch((error) => {
-      console.error("[DEBUG] Content: Error getting tab enabled state:", error);
-      isEnabled = false;
+      log.error("Content", "Error getting tab enabled state:", error);
     });
 }
 

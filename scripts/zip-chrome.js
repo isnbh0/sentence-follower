@@ -27,6 +27,7 @@ fs.mkdtemp(tempDirPrefix, async (err, tempDir) => {
 
   try {
     // Define the files and directories to include in the Chrome extension package
+    // Use the webpack build output from dist directory
     const filesToInclude = [
       "manifest.json",
       "background.js",
@@ -35,9 +36,10 @@ fs.mkdtemp(tempDirPrefix, async (err, tempDir) => {
       "icons/",
     ];
 
-    const baseDir = path.resolve(__dirname, "../");
+    const baseDir = path.resolve(__dirname, "../dist");
 
     const filesToIgnore = [
+      "extension.zip", // Exclude the zip file itself
       "**/node_modules/**",
       "**/__tests__/**",
       "**/*.test.js",
@@ -51,7 +53,7 @@ fs.mkdtemp(tempDirPrefix, async (err, tempDir) => {
     function shouldIgnore(filePath) {
       const relativePath = path.relative(baseDir, filePath);
       const isIgnored = filesToIgnore.some((pattern) =>
-        minimatch(relativePath, pattern, { dot: true }),
+        minimatch(relativePath, pattern, { dot: true })
       );
       if (isIgnored) {
         console.log(`❌ Excluded: ${relativePath}`);
@@ -86,7 +88,7 @@ fs.mkdtemp(tempDirPrefix, async (err, tempDir) => {
     // Listen for all archive data to be written
     output.on("close", () => {
       console.log(
-        `✅ Extension package zipped successfully. Total size: ${archive.pointer()} bytes`,
+        `✅ Extension package zipped successfully. Total size: ${archive.pointer()} bytes`
       );
       // Clean up the temporary directory
       fs.rm(tempDir, { recursive: true, force: true }, (err) => {
