@@ -2,13 +2,13 @@ const browserAPI =
   typeof window !== "undefined" && window.browser
     ? window.browser
     : typeof chrome !== "undefined"
-      ? chrome
-      : {
-          storage: {
-            local: { get: async () => ({}), set: async () => {} },
-            onChanged: { addListener: () => {} },
-          },
-        };
+    ? chrome
+    : {
+        storage: {
+          local: { get: async () => ({}), set: async () => {} },
+          onChanged: { addListener: () => {} },
+        },
+      };
 
 const DEBUG = false;
 
@@ -18,13 +18,14 @@ const log = {
 };
 
 const DEFAULT_OPTIONS = {
-  enabled: false,
   backgroundColor: "#ffff00",
   useDefaultBackground: false,
   textColor: "#000000",
   useDefaultText: false,
 };
 
+// Separate the enabled state from other options as it's now per-tab
+let isEnabled = false;
 let currentOptions = { ...DEFAULT_OPTIONS };
 
 // Add CJK Unicode ranges constant
@@ -39,12 +40,15 @@ function initializeHighlighter() {
         document.addEventListener("mousemove", throttledMouseMoveHandler);
         document.body.setAttribute(
           "data-sentence-highlighter-initialized",
-          "true",
+          "true"
         );
         log.info(
           "Sentence highlighter initialized with options:",
-          currentOptions,
+          currentOptions
         );
+
+        // Get the enabled state for this tab from the background page
+        checkTabEnabledState();
       }
     })
     .catch((error) => {
@@ -52,20 +56,47 @@ function initializeHighlighter() {
     });
 }
 
-// Load options from storage
+// Check if highlighting is enabled for this tab
+function checkTabEnabledState() {
+  console.log(`[DEBUG] Content: checkTabEnabledState called`);
+  browserAPI.runtime
+    .sendMessage({ action: "getTabEnabled" })
+    .then((response) => {
+      console.log(
+        `[DEBUG] Content: Got response from getTabEnabled:`,
+        response
+      );
+      isEnabled = response && response.enabled === true;
+      // Add a small delay before logging to ensure message response has completed
+      setTimeout(() => {
+        console.log(`[DEBUG] Content: Tab enabled state set to: ${isEnabled}`);
+      }, 50);
+    })
+    .catch((error) => {
+      console.error("[DEBUG] Content: Error getting tab enabled state:", error);
+      isEnabled = false;
+    });
+}
+
+// Load options from background script (tab-specific formatting options)
 function loadOptions() {
-  log.info("Loading options...");
-  return browserAPI.storage.local
-    .get(DEFAULT_OPTIONS)
-    .then((storedOptions) => {
-      log.info("Stored options:", storedOptions);
-      currentOptions = { ...DEFAULT_OPTIONS, ...storedOptions };
-      log.info("Merged options:", currentOptions);
+  log.info("Loading tab-specific formatting options...");
+  return browserAPI.runtime
+    .sendMessage({ action: "getTabFormatting" })
+    .then((response) => {
+      if (response && response.formatting) {
+        log.info("Received tab-specific formatting:", response.formatting);
+        currentOptions = { ...DEFAULT_OPTIONS, ...response.formatting };
+      } else {
+        log.info("No tab-specific formatting received, using defaults");
+        currentOptions = { ...DEFAULT_OPTIONS };
+      }
+      log.info("Current options:", currentOptions);
       applyStyles();
       return currentOptions;
     })
     .catch((error) => {
-      console.error("Error loading options:", error);
+      console.error("Error loading tab-specific formatting:", error);
       currentOptions = { ...DEFAULT_OPTIONS };
       applyStyles();
       return currentOptions;
@@ -94,7 +125,9 @@ function applyStyles() {
             display: inline;
         }
         li .sentence-highlight {
-            background-color: ${bgColor === "inherit" ? "inherit" : bgColor} !important;
+            background-color: ${
+              bgColor === "inherit" ? "inherit" : bgColor
+            } !important;
             color: ${txtColor} !important;
         }
     `;
@@ -122,10 +155,6 @@ function handleStorageChange(changes, areaName) {
   if (needsUpdate) {
     log.info("Updating styles with new options:", currentOptions);
     applyStyles();
-
-    if ("enabled" in changes && !currentOptions.enabled) {
-      removeHighlights();
-    }
   }
 }
 
@@ -134,7 +163,7 @@ const throttledMouseMoveHandler = throttle(debounce(handleMouseMove, 50), 100);
 
 // Handle mouse move events
 function handleMouseMove(event) {
-  if (!currentOptions.enabled) return;
+  if (!isEnabled) return;
 
   const targetElement = event.target;
   log.info("Mouse over element:", targetElement);
@@ -147,7 +176,7 @@ function handleMouseMove(event) {
         const absoluteOffset = calculateAbsoluteOffset(
           container,
           textNode,
-          offset,
+          offset
         );
         highlightSentence(container, absoluteOffset);
       }
@@ -202,7 +231,7 @@ function getCaretPosition(event) {
     } else if (document.caretPositionFromPoint) {
       const position = document.caretPositionFromPoint(
         event.clientX,
-        event.clientY,
+        event.clientY
       );
       if (position) {
         range = document.createRange();
@@ -260,7 +289,7 @@ function calculateAbsoluteOffset(container, textNode, offset) {
     container,
     NodeFilter.SHOW_TEXT,
     null,
-    false,
+    false
   );
 
   let currentNode;
@@ -301,7 +330,7 @@ function highlightSentence(container, offset) {
       container,
       NodeFilter.SHOW_TEXT,
       null,
-      false,
+      false
     );
 
     let currentNode;
@@ -372,13 +401,13 @@ function findSentenceBoundaries(text, offset) {
   const sentenceEndRegex = /[.!?。！？︕︖]/g;
   const footnotePattern = /(?:\[[0-9a-zA-Z]+\]|\([0-9a-zA-Z]+\))/;
   const nextSentencePattern = new RegExp(
-    `(?:\\s+[A-Z]|${CJK_RANGES}|\\s*\\(|$)`,
+    `(?:\\s+[A-Z]|${CJK_RANGES}|\\s*\\(|$)`
   );
   const listItemBoundaryPattern = /<\/li>/i;
 
   const combinedRegex = new RegExp(
     `(?:${sentenceEndRegex.source})${footnotePattern.source}?(?=${nextSentencePattern.source}|${listItemBoundaryPattern.source}|${CJK_RANGES}?)`,
-    "g",
+    "g"
   );
 
   let sentenceStart = 0;
@@ -428,46 +457,89 @@ function removeHighlights() {
 
 // Toggle the highlighter's enabled state
 function toggleHighlighter() {
-  const newEnabledState = !currentOptions.enabled;
-  browserAPI.storage.local
-    .set({ enabled: newEnabledState })
-    .then(() => {
-      currentOptions.enabled = newEnabledState;
-      if (!newEnabledState) {
-        removeHighlights();
-      }
-      displayStatusMessage(
-        `Sentence Follower ${newEnabledState ? "Enabled" : "Disabled"}`,
+  const newEnabledState = !isEnabled;
+  console.log(
+    `[DEBUG] Content: toggleHighlighter called, new state will be: ${newEnabledState}`
+  );
+
+  // Send a message to the background script to update the enabled state for this tab
+  console.log(
+    `[DEBUG] Content: Sending setTabEnabled message with enabled=${newEnabledState}`
+  );
+  browserAPI.runtime
+    .sendMessage({
+      action: "setTabEnabled",
+      enabled: newEnabledState,
+    })
+    .then((response) => {
+      console.log(
+        `[DEBUG] Content: Received response from setTabEnabled:`,
+        response
       );
+      if (response && response.success) {
+        isEnabled = newEnabledState;
+        console.log(
+          `[DEBUG] Content: Updated local isEnabled to: ${isEnabled}`
+        );
+        if (!newEnabledState) {
+          removeHighlights();
+        }
+        displayStatusMessage(
+          `Sentence Follower ${newEnabledState ? "Enabled" : "Disabled"}`
+        );
+      } else {
+        // Handle case when the background script returns an error
+        console.error(
+          "[DEBUG] Content: Failed to toggle highlighter:",
+          response?.error || "Unknown error"
+        );
+        displayStatusMessage("Failed to toggle highlighting", true);
+      }
     })
     .catch((error) => {
-      console.error("Error toggling highlighter:", error);
+      console.error("[DEBUG] Content: Error toggling highlighter:", error);
+      displayStatusMessage("Failed to toggle highlighting", true);
     });
 }
 
 // Display a status message to the user
-function displayStatusMessage(message) {
+function displayStatusMessage(message, isError = false) {
   const statusDiv = document.createElement("div");
   statusDiv.textContent = message;
+
+  // Set styles based on whether this is an error or not
   Object.assign(statusDiv.style, {
     position: "fixed",
     top: "20px",
     right: "20px",
     padding: "10px 20px",
-    backgroundColor: "#333",
+    backgroundColor: isError ? "#d32f2f" : "#333",
     color: "#fff",
     borderRadius: "5px",
     zIndex: "10000",
     transition: "opacity 0.5s",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+    border: isError ? "1px solid #b71c1c" : "none",
   });
+
+  // Add an icon for visual feedback if it's an error
+  if (isError) {
+    const iconSpan = document.createElement("span");
+    iconSpan.textContent = "⚠️ ";
+    statusDiv.prepend(iconSpan);
+  }
+
   document.body.appendChild(statusDiv);
+
+  // Keep error messages visible a bit longer
+  const displayTime = isError ? 2500 : 1500;
 
   setTimeout(() => {
     statusDiv.style.opacity = "0";
-  }, 1500);
+  }, displayTime);
   setTimeout(() => {
     statusDiv.remove();
-  }, 2000);
+  }, displayTime + 500);
 }
 
 // Utility: Throttle function
@@ -498,23 +570,33 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-// Listen for messages from the background or options page
-browserAPI.runtime.onMessage.addListener((message) => {
-  log.info("Received message:", message);
-  if (message.action === "reloadOptions") {
-    loadOptions()
-      .then(() => {
-        log.info("Options reloaded successfully.");
-      })
-      .catch((error) => {
-        console.error("Error reloading options:", error);
-      });
-  } else if (message.action === "toggleHighlighter") {
-    currentOptions.enabled = message.enabled;
-    if (!message.enabled) {
+// Listen for messages from the background script
+browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  log.info("Message received:", message);
+
+  if (message.action === "updateTabEnabled") {
+    isEnabled = message.enabled === true;
+    log.info("Tab enabled state updated:", isEnabled);
+
+    // If disabled, remove highlights
+    if (!isEnabled) {
       removeHighlights();
     }
+
+    sendResponse({ success: true });
+    return true;
+  } else if (message.action === "updateTabFormatting") {
+    if (message.formatting) {
+      log.info("Tab formatting updated:", message.formatting);
+      currentOptions = { ...currentOptions, ...message.formatting };
+      applyStyles();
+    }
+
+    sendResponse({ success: true });
+    return true;
   }
+
+  return false;
 });
 
 // Observe DOM changes to initialize highlighter on dynamic content
@@ -529,17 +611,17 @@ domObserver.observe(document.documentElement, {
   subtree: true,
 });
 
-// Initialize the highlighter on script load and DOMContentLoaded
+// Initialize the highlighter when the page is loaded
+document.addEventListener("DOMContentLoaded", initializeHighlighter);
+
+// Also try to initialize immediately in case DOMContentLoaded already fired
 initializeHighlighter();
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initializeHighlighter);
-} else {
-  initializeHighlighter();
-}
-
 // Export functions for testing
-if (typeof process !== "undefined" && process.env.NODE_ENV === "test") {
+if (
+  (typeof process !== "undefined" && process.env.NODE_ENV === "test") ||
+  (typeof module !== "undefined" && module.exports)
+) {
   module.exports = {
     findSentenceBoundaries,
     throttle,
@@ -547,6 +629,10 @@ if (typeof process !== "undefined" && process.env.NODE_ENV === "test") {
     highlightSentence,
     removeHighlights,
     toggleHighlighter,
-    isEnabled: () => currentOptions.enabled,
+    checkTabEnabledState,
+    displayStatusMessage,
+    isEnabled: () => isEnabled,
+    handleMouseMove,
+    loadOptions,
   };
 }

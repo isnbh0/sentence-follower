@@ -7,6 +7,7 @@ const untrackedFiles = execSync("git ls-files --others ':!node_modules/**'", {
   .split("\n")
   .filter(Boolean);
 
+// Export the config
 module.exports = {
   build: {
     overwriteDest: true, // optional, overwrite existing build
