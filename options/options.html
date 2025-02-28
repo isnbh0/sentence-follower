@@ -42,10 +42,6 @@
         border-left: 3px solid #4caf50;
       }
 
-      .color-group {
-        display: none;
-      }
-
       .status {
         color: green;
         opacity: 0;
@@ -66,7 +62,8 @@
         background-color: #fff;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         margin-top: 2em;
-        width: fit-content;
+        width: 320px;
+        box-sizing: border-box;
       }
 
       .settings-box .form-group {
@@ -98,26 +95,51 @@
 
       .color-options {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.2em;
-        width: fit-content;
+        grid-template-columns: repeat(auto-fit, minmax(24px, 1fr));
+        gap: 8px;
+        max-width: 180px;
+        margin-top: 0.5em;
       }
 
+      /* Color Swatch Grid Styles */
+      #bg-color-swatches,
+      #text-color-swatches {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      /* Color Swatch Styles */
       .color-swatch {
-        width: 25px;
-        height: 25px;
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
         border: 1px solid #ccc;
-        border-radius: 2px;
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: transform 0.1s, box-shadow 0.1s;
+      }
+
+      .color-swatch:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      .color-swatch.selected {
+        border: 1px solid #4caf50;
+        box-shadow: 0 0 0 2px #4caf50, 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+        transform: scale(1.05);
+      }
+
+      /* No color swatch style */
+      .no-color {
+        background-color: #e0e0e0 !important;
         position: relative;
       }
 
-      .color-swatch.no-color {
-        background-color: #e0e0e0;
-      }
-
-      .color-swatch.no-color::after {
+      .no-color::after {
         content: "";
         position: absolute;
         top: 0;
@@ -128,66 +150,58 @@
         transform: rotate(45deg);
       }
 
-      .selected {
-        border: 2px solid #4caf50;
-      }
-
-      /* Sample Preview Panel */
-      .preview-panel {
-        border: 1px solid #ccc;
-        border-radius: 8px;
+      /* Preview Section Styles */
+      .preview-container {
+        margin-top: 1em;
         padding: 1em;
+        border: 1px solid #ddd;
+        border-radius: 6px;
         background-color: #fff;
-        margin-top: 2em;
-        text-align: center;
-      }
-
-      .preview-text {
-        font-size: 1.2em;
-        padding: 1em;
-        border-radius: 4px;
-        display: inline-block;
-      }
-
-      /* Save Button Styles */
-      .settings-box button[type="submit"] {
         width: 100%;
-        padding: 0.75em;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
+        box-sizing: border-box;
+        margin: 10px auto 0;
+      }
+
+      .preview-container h3 {
+        margin-top: 0;
+        margin-bottom: 0.5em;
         font-size: 1em;
       }
 
-      .settings-box button[type="submit"]:hover {
-        background-color: #45a049;
+      #color-preview-text {
+        padding: 0.5em;
+        border-radius: 4px;
+        font-family: serif;
+        font-size: 16px;
+        line-height: 1.5;
+        border: 1px dashed #ccc;
+        transition: all 0.2s;
       }
 
       /* Toggle Button Styles */
       .toggle-button {
-        width: 60px;
-        height: 30px;
-        background-color: #ccc;
-        border: none;
-        border-radius: 15px;
         position: relative;
+        display: block;
+        width: 50px;
+        height: 26px;
+        border-radius: 13px;
+        background-color: #ccc;
         cursor: pointer;
-        outline: none;
         transition: background-color 0.3s;
+        margin-top: 5px;
       }
 
       .toggle-button::after {
         content: "";
-        width: 26px;
-        height: 26px;
-        background-color: white;
-        border-radius: 50%;
         position: absolute;
-        top: 2px;
-        left: 2px;
+        top: 3px;
+        left: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: white;
         transition: left 0.3s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
       }
 
       .toggle-button.active {
@@ -195,170 +209,242 @@
       }
 
       .toggle-button.active::after {
-        left: 32px;
+        left: 27px;
       }
 
       .toggle-container {
         display: flex;
-        align-items: center;
         justify-content: space-between;
-        gap: 1em;
-        width: fit-content;
+        align-items: center;
       }
 
-      /* Disabled Section Styles */
+      /* Popout Button Styles */
+      .popout-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px 10px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 0.9em;
+      }
+
+      .popout-button:hover {
+        background-color: #e0e0e0;
+      }
+
+      .popout-button .icon {
+        font-size: 1.1em;
+      }
+
+      .toggle-popout-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .toggle-container {
+        margin-bottom: 0;
+      }
+
+      /* Popout container styles */
+      .popout-container {
+        display: flex;
+        justify-content: center;
+        margin: 15px 0;
+        border-top: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+        padding: 10px 0;
+      }
+
+      /* Styles for the floating UI missing message */
+      #floating-ui-missing {
+        display: none;
+        padding: 1em;
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        text-align: center;
+        margin: 1em 0;
+        width: calc(100% - 10px);
+        box-sizing: border-box;
+      }
+
+      /* Color options container - matching floating UI styling */
+      .color-options-container {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 15px;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        width: calc(
+          100% - 10px
+        ); /* Slightly less than full width to account for margins */
+        box-sizing: border-box;
+        margin: 0 auto;
+      }
+
+      /* Disabled section style */
       .disabled-section {
         opacity: 0.5;
         pointer-events: none;
       }
 
-      /* Responsive Adjustments */
-      @media (max-width: 420px) {
-        .color-picker-panel {
-          gap: 0.5em;
-        }
+      /* Colors section container */
+      .colors-section {
+        margin-bottom: 15px;
+      }
 
-        .toggle-container {
-          flex-direction: row;
-        }
+      /* Color groups container */
+      .color-groups {
+        display: flex;
+        gap: 0;
+        justify-content: center;
+        position: relative;
+        align-items: flex-start;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      /* Vertical divider between sections */
+      .color-divider {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #bbb;
+        transform: translateX(-50%);
+        border-radius: 1px;
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+      }
+
+      /* Color container style */
+      .color-container {
+        width: 45%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* Color label style */
+      .color-label {
+        font-weight: bold;
+        margin: 0 0 8px 0;
+        padding: 0;
+        line-height: 1.2;
+        font-size: 14px;
+        text-align: center;
+        width: 100%;
+        display: block;
+      }
+
+      .background-container {
+        padding-right: 10px;
+      }
+
+      .text-container {
+        padding-left: 10px;
+      }
+
+      #floating-ui-missing button {
+        margin: 10px auto;
+        display: block;
       }
     </style>
   </head>
-
   <body>
-    <form id="options-form">
-      <!-- Toggle Section -->
-      <div class="form-group toggle-container">
-        <div>
-          <label for="enabledToggle">Enable Sentence Follower</label>
-          <span class="shortcut-note">(Alt+Shift+H to toggle)</span>
-          <span class="tab-specific-note" id="tabIndicator"
-            >Settings affect current tab only</span
-          >
-        </div>
-        <button
-          type="button"
-          id="enabledToggle"
-          class="toggle-button"
-          aria-pressed="true"
-        ></button>
+    <div class="settings-box">
+      <h2>Sentence Follower Settings</h2>
+      <div id="tabIndicator" class="tab-specific-note">
+        Settings affect current tab only
       </div>
 
-      <!-- Settings Box -->
-      <div class="settings-box">
-        <div class="color-picker-panel">
-          <!-- Background Color Picker -->
-          <div class="form-group" id="backgroundColorGroup">
-            <label>Background</label>
-            <div class="color-options" id="backgroundColorOptions">
-              <div class="color-swatch no-color" data-color="default"></div>
-              <div
-                class="color-swatch"
-                data-color="#ffff00"
-                style="background-color: #ffff00"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#ff0000"
-                style="background-color: #ff0000"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#00ff00"
-                style="background-color: #00ff00"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#0000ff"
-                style="background-color: #0000ff"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#ff00ff"
-                style="background-color: #ff00ff"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#00ffff"
-                style="background-color: #00ffff"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#000000"
-                style="background-color: #000000"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#ffffff"
-                style="background-color: #ffffff"
-              ></div>
-            </div>
+      <div class="toggle-popout-container">
+        <!-- Toggle Section -->
+        <div class="form-group toggle-container">
+          <div>
+            <label for="enabledToggle">Enable Sentence Follower</label>
+            <span class="shortcut-note">(Alt+Shift+H to toggle)</span>
           </div>
+          <div
+            role="switch"
+            id="enabledToggle"
+            class="toggle-button"
+            aria-checked="false"
+            tabindex="0"
+          ></div>
+        </div>
+      </div>
 
-          <!-- Text Color Picker -->
-          <div class="form-group" id="textColorGroup">
-            <label>Text</label>
-            <div class="color-options" id="textColorOptions">
-              <div class="color-swatch no-color" data-color="default"></div>
-              <div
-                class="color-swatch"
-                data-color="#ffff00"
-                style="background-color: #ffff00"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#ff0000"
-                style="background-color: #ff0000"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#00ff00"
-                style="background-color: #00ff00"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#0000ff"
-                style="background-color: #0000ff"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#ff00ff"
-                style="background-color: #ff00ff"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#00ffff"
-                style="background-color: #00ffff"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#000000"
-                style="background-color: #000000"
-              ></div>
-              <div
-                class="color-swatch"
-                data-color="#ffffff"
-                style="background-color: #ffffff"
-              ></div>
+      <!-- Popout Button - Now separated above the control panel -->
+      <div class="popout-container">
+        <button id="popoutButton" class="popout-button">
+          <span class="icon popout-icon">⬈</span> Popout Controls
+        </button>
+        <button id="popinButton" class="popout-button" style="display: none">
+          <span class="icon popin-icon">⬋</span> Pop In Controls
+        </button>
+      </div>
+
+      <!-- Message when floating UI is already visible -->
+      <div id="floating-ui-missing">
+        <p>The controls are currently popped out on the page.</p>
+        <p>
+          Close this popup and use the floating controls, or click the button
+          below to open them if they're hidden.
+        </p>
+        <button id="show-floating-ui" class="popout-button">
+          <span class="icon">⬈</span> Show Floating Controls
+        </button>
+      </div>
+
+      <!-- Color Options Container - This mirrors the floating UI structure -->
+      <div id="color-options-container" class="color-options-container">
+        <!-- Color Swatches Section -->
+        <div class="colors-section">
+          <div class="color-groups">
+            <!-- Vertical divider between sections -->
+            <div class="color-divider"></div>
+
+            <!-- Background color swatches -->
+            <div class="color-container background-container">
+              <div class="color-label">Background</div>
+              <div id="bg-color-swatches"></div>
+            </div>
+
+            <!-- Text color swatches -->
+            <div class="color-container text-container">
+              <div class="color-label">Text</div>
+              <div id="text-color-swatches"></div>
             </div>
           </div>
         </div>
 
-        <!-- Sample Preview Panel -->
-        <div class="preview-panel" id="previewPanel">
-          <span class="preview-text" id="previewText"
-            >This is a sample preview.</span
-          >
-        </div>
-
-        <!-- Save Button -->
-        <div class="form-group">
-          <button type="submit">Save Color Choices</button>
+        <!-- Preview Section -->
+        <div class="preview-container">
+          <h3>Preview</h3>
+          <div id="color-preview-text">
+            This is how your highlighted text will appear.
+          </div>
         </div>
       </div>
 
-      <div id="status" class="status">Options saved!</div>
-    </form>
+      <!-- Status Message -->
+      <div id="status" class="status">Settings saved</div>
+    </div>
+
+    <!-- Load common.js first to define browserAPI -->
+    <script src="../content_scripts/common.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

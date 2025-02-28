@@ -151,103 +151,167 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
     );
 
     if (tabId) {
-      console.log(
-        `[DEBUG] Background: Setting tab ${tabId} enabled state to: ${message.enabled}`
-      );
       const state = getTabState(tabId);
-      state.enabled = message.enabled;
-      console.log(`[DEBUG] Background: Updated tab state:`, state);
+      state.enabled = message.enabled === true;
+      sendResponse({ success: true, enabled: state.enabled });
 
-      // Notify the tab of the change
+      // Notify the content script about the change
       browserAPI.tabs
         .sendMessage(tabId, {
           action: "updateTabEnabled",
-          enabled: message.enabled,
-        })
-        .then(() => {
-          console.log(
-            `[DEBUG] Background: Successfully notified tab ${tabId} of state change`
-          );
+          enabled: state.enabled,
         })
         .catch((error) => {
-          console.error(
-            `[DEBUG] Background: Failed to update tab ${tabId}:`,
-            error
+          console.log(
+            `[DEBUG] Background: Error notifying content script about tab enabled state: ${error}`
           );
         });
 
-      sendResponse({ success: true });
+      // Broadcast the change to all extension pages (including options)
+      browserAPI.runtime
+        .sendMessage({
+          action: "updateTabEnabled",
+          tabId: tabId,
+          enabled: state.enabled,
+        })
+        .catch((error) => {
+          console.log(
+            `[DEBUG] Background: Error broadcasting tab enabled state: ${error}`
+          );
+        });
     } else {
       console.error(
         `[DEBUG] Background: Missing tabId in setTabEnabled request`
       );
-      sendResponse({ success: false, error: "Missing tab ID" });
+      sendResponse({ success: false, error: "Missing tabId" });
     }
-    return true; // Keep the channel open for the async response
+    return true;
   } else if (message.action === "getTabFormatting") {
-    // New message to get formatting options for a specific tab
-    const tabId = sender.tab?.id || message.tabId;
+    // Get formatting options for a specific tab
+    const tabId = message.tabId || sender.tab?.id;
+    console.log(`[DEBUG] Background: getTabFormatting for tab ${tabId}`);
+
     if (tabId) {
+      const formatting = getTabFormatting(tabId);
       console.log(
-        `[Tab State] Received getTabFormatting request for tab ${tabId}`
+        `[DEBUG] Background: Retrieved formatting for tab ${tabId}:`,
+        formatting
       );
-      sendResponse({ formatting: getTabFormatting(tabId) });
+      sendResponse({ formatting });
     } else {
-      console.error(`[Tab State] Missing tabId in getTabFormatting request`);
-      sendResponse({ formatting: DEFAULT_OPTIONS });
-    }
-    return true; // Keep the channel open for the async response
-  } else if (message.action === "setTabFormatting") {
-    // New message to set formatting options for a specific tab
-    const tabId = sender.tab?.id || message.tabId;
-    if (tabId && message.formatting) {
-      console.log(
-        `[Tab State] Setting tab ${tabId} formatting:`,
-        message.formatting
+      console.error(
+        `[DEBUG] Background: Missing tabId in getTabFormatting request`
       );
+      sendResponse({ formatting: null });
+    }
+    return true;
+  } else if (message.action === "setTabFormatting") {
+    // Update formatting options for a specific tab
+    const tabId = message.tabId || sender.tab?.id;
+    console.log(
+      `[DEBUG] Background: setTabFormatting for tab ${tabId}:`,
+      message.formatting
+    );
+
+    if (tabId && message.formatting) {
       const state = getTabState(tabId);
+      const formatting = message.formatting;
 
-      // Update formatting options
-      if (message.formatting.backgroundColor !== undefined) {
-        state.backgroundColor = message.formatting.backgroundColor;
-      }
-      if (message.formatting.useDefaultBackground !== undefined) {
-        state.useDefaultBackground = message.formatting.useDefaultBackground;
-      }
-      if (message.formatting.textColor !== undefined) {
-        state.textColor = message.formatting.textColor;
-      }
-      if (message.formatting.useDefaultText !== undefined) {
-        state.useDefaultText = message.formatting.useDefaultText;
+      // Update the background color if provided
+      if (formatting.hasOwnProperty("backgroundColor")) {
+        state.backgroundColor = formatting.backgroundColor;
       }
 
-      // Notify the tab of the change
+      // Update the text color if provided
+      if (formatting.hasOwnProperty("textColor")) {
+        state.textColor = formatting.textColor;
+      }
+
+      // Update useDefaultBackground if provided
+      if (formatting.hasOwnProperty("useDefaultBackground")) {
+        state.useDefaultBackground = formatting.useDefaultBackground === true;
+      }
+
+      // Update useDefaultText if provided
+      if (formatting.hasOwnProperty("useDefaultText")) {
+        state.useDefaultText = formatting.useDefaultText === true;
+      }
+
+      // Respond with the updated formatting
+      const updatedFormatting = getTabFormatting(tabId);
+      sendResponse({ success: true, formatting: updatedFormatting });
+
+      // Notify the content script about the change
       browserAPI.tabs
         .sendMessage(tabId, {
           action: "updateTabFormatting",
-          formatting: getTabFormatting(tabId),
-        })
-        .then(() => {
-          console.log(
-            `[Tab State] Successfully notified tab ${tabId} of formatting change`
-          );
+          formatting: updatedFormatting,
         })
         .catch((error) => {
-          console.error(
-            `[Tab State] Failed to update tab ${tabId} formatting:`,
-            error
+          console.log(
+            `[DEBUG] Background: Error notifying content script about formatting: ${error}`
           );
         });
 
-      sendResponse({ success: true });
+      // Broadcast the formatting change to all extension pages (including options)
+      browserAPI.runtime
+        .sendMessage({
+          action: "updateTabFormatting",
+          tabId: tabId,
+          formatting: updatedFormatting,
+        })
+        .catch((error) => {
+          console.log(
+            `[DEBUG] Background: Error broadcasting formatting change: ${error}`
+          );
+        });
     } else {
-      console.error(`[Tab State] Invalid setTabFormatting request:`, {
-        tabId,
-        formatting: message.formatting,
+      console.error(
+        `[DEBUG] Background: Invalid setTabFormatting request, missing tabId or formatting`
+      );
+      sendResponse({
+        success: false,
+        error: "Missing tabId or formatting options",
       });
-      sendResponse({ success: false, error: "Invalid formatting request" });
     }
-    return true; // Keep the channel open for the async response
+    return true;
+  } else if (
+    message.action === "tabEnabledChanged" ||
+    message.action === "tabFormattingChanged"
+  ) {
+    // Forward these messages to ensure all parts of the extension stay in sync
+    console.log(`[DEBUG] Background: Forwarding message: ${message.action}`);
+
+    // Create the appropriate action to broadcast
+    const broadcastAction =
+      message.action === "tabEnabledChanged"
+        ? "updateTabEnabled"
+        : "updateTabFormatting";
+
+    // Broadcast to all extension parts
+    browserAPI.runtime
+      .sendMessage({
+        action: broadcastAction,
+        ...message, // Include all original properties
+          })
+          .catch((error) => {
+        console.log(`[DEBUG] Background: Error forwarding message: ${error}`);
+      });
+
+    sendResponse({ success: true });
+    return true;
+  } else if (message.action === "updateFloatingUIVisibility") {
+    // Forward floating UI visibility changes to options page
+    console.log(
+      `[DEBUG] Background: Forwarding UI visibility change: ${message.visible}`
+    );
+
+    browserAPI.runtime.sendMessage(message).catch((error) => {
+      console.log(`[DEBUG] Background: Error forwarding visibility: ${error}`);
+    });
+
+    sendResponse({ success: true });
+    return true;
   }
 });
 
