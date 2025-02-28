@@ -3,130 +3,225 @@ const browserAPI =
   typeof window !== "undefined" && window.browser
     ? window.browser
     : typeof chrome !== "undefined"
-      ? chrome
-      : {
-          storage: {
-            local: { get: async () => ({}), set: async () => {} },
-          },
-          runtime: {
-            sendMessage: async () => {},
-          },
-          tabs: {
-            query: async () => [],
-            sendMessage: async (tabId, message) => {},
-          },
-        };
+    ? chrome
+    : {
+        storage: {
+          local: { get: async () => ({}), set: async () => {} },
+        },
+        runtime: {
+          sendMessage: async () => {},
+        },
+        tabs: {
+          query: async () => [],
+          sendMessage: async (tabId, message) => {},
+        },
+      };
 
 const DEFAULT_OPTIONS = {
-  enabled: false,
   backgroundColor: "#ffff00",
   textColor: "#000000",
 };
 
-// Save options to browser.storage
-function saveOptions(options) {
-  browserAPI.storage.local
-    .set(options)
-    .then(() => {
-      const status = document.getElementById("status");
-      status.classList.add("show");
-      setTimeout(() => status.classList.remove("show"), 1500);
+// Track the current active tab
+let currentTabId = null;
 
-      // Send a message to notify content scripts about the update
-      browserAPI.runtime
-        .sendMessage({ action: "reloadOptions" })
-        .catch((error) => {
-          console.error("Error sending message:", error);
-        });
+// Save options for the current tab
+function saveOptions(options) {
+  // Get the current active tab
+  browserAPI.tabs
+    .query({ active: true, currentWindow: true })
+    .then((tabs) => {
+      if (tabs && tabs.length > 0) {
+        const activeTab = tabs[0];
+
+        // Send a message to set the formatting options for this specific tab
+        browserAPI.runtime
+          .sendMessage({
+            action: "setTabFormatting",
+            tabId: activeTab.id,
+            formatting: options,
+          })
+          .then(() => {
+            const status = document.getElementById("status");
+            status.classList.add("show");
+            setTimeout(() => status.classList.remove("show"), 1500);
+
+            // Update the tab indicator to show formatting is per-tab
+            const tabIndicator = document.getElementById("tabIndicator");
+            if (tabIndicator) {
+              tabIndicator.textContent = `Settings affect current tab only: ${getDomainFromTab(
+                activeTab
+              )}`;
+            }
+          })
+          .catch((error) => {
+            console.error("Error setting tab formatting:", error);
+          });
+      }
     })
     .catch((error) => {
-      console.error("Error saving options:", error);
+      console.error("Error getting active tab:", error);
     });
 }
 
 // Handle toggle button state change
 function handleToggleChange(isEnabled) {
-  const options = {
-    enabled: isEnabled,
-  };
+  // Get the current active tab
+  browserAPI.tabs
+    .query({ active: true, currentWindow: true })
+    .then((tabs) => {
+      if (tabs && tabs.length > 0) {
+        const activeTab = tabs[0];
 
-  // First save the options
-  browserAPI.storage.local
-    .set(options)
-    .then(() => {
-      // Then notify all tabs to update and remove highlights if disabled
-      browserAPI.tabs.query({}).then((tabs) => {
-        tabs.forEach((tab) => {
-          browserAPI.tabs
-            .sendMessage(tab.id, {
-              action: "toggleHighlighter",
-              enabled: isEnabled,
-            })
-            .catch((error) => {
-              // Ignore errors for tabs where content script isn't loaded
-              console.log(`Could not send message to tab ${tab.id}:`, error);
-            });
-        });
-      });
-
-      updateColorPickersState(isEnabled);
+        // Send a message to set the enabled state for this specific tab
+        browserAPI.runtime
+          .sendMessage({
+            action: "setTabEnabled",
+            tabId: activeTab.id,
+            enabled: isEnabled,
+          })
+          .then(() => {
+            updateColorPickersState(isEnabled);
+          })
+          .catch((error) => {
+            console.error("Error setting tab enabled state:", error);
+          });
+      }
     })
     .catch((error) => {
-      console.error("Error saving options:", error);
+      console.error("Error getting active tab:", error);
     });
 }
 
-// Restore options from browser.storage
+// Helper function to get domain from tab
+function getDomainFromTab(tab) {
+  let domain = "";
+  try {
+    if (tab.url) {
+      const url = new URL(tab.url);
+      domain = url.hostname;
+    }
+  } catch (e) {
+    console.error("Error parsing URL:", e);
+  }
+  return domain || "current tab";
+}
+
+// Update the tab indicator with current tab info
+function updateTabIndicator(tab) {
+  const tabIndicator = document.getElementById("tabIndicator");
+  if (tabIndicator && tab) {
+    // Store the current tab ID
+    currentTabId = tab.id;
+
+    // Get domain for display
+    const domain = getDomainFromTab(tab);
+
+    // Update the indicator text
+    tabIndicator.textContent = `Settings affect current tab only: ${domain}`;
+  }
+}
+
+// Restore options from the current tab
 function restoreOptions() {
-  console.log("Restoring options...");
+  console.log("[DEBUG] Popup: restoreOptions() called");
 
-  browserAPI.storage.local
-    .get(DEFAULT_OPTIONS)
-    .then((options) => {
-      console.log("Retrieved options:", options);
+  // Get the current tab to check its state
+  browserAPI.tabs
+    .query({ active: true, currentWindow: true })
+    .then((tabs) => {
+      if (tabs && tabs.length > 0) {
+        const activeTab = tabs[0];
+        console.log("[DEBUG] Popup: Found active tab with ID:", activeTab.id);
 
-      // Restore Toggle Button State
-      const enabledToggle = document.getElementById("enabledToggle");
-      if (options.enabled) {
-        enabledToggle.classList.add("active");
-        enabledToggle.setAttribute("aria-pressed", "true");
-      } else {
-        enabledToggle.classList.remove("active");
-        enabledToggle.setAttribute("aria-pressed", "false");
+        // Update the tab indicator
+        updateTabIndicator(activeTab);
+
+        // Get the tab-specific formatting options
+        browserAPI.runtime
+          .sendMessage({
+            action: "getTabFormatting",
+            tabId: activeTab.id,
+          })
+          .then((response) => {
+            console.log("[DEBUG] Popup: Got formatting response:", response);
+            if (response && response.formatting) {
+              const formatting = response.formatting;
+
+              // Restore Background Color Selection
+              const bgSwatches = document.querySelectorAll(
+                "#backgroundColorOptions .color-swatch"
+              );
+              bgSwatches.forEach((swatch) => {
+                if (swatch.dataset.color === formatting.backgroundColor) {
+                  swatch.classList.add("selected");
+                } else {
+                  swatch.classList.remove("selected");
+                }
+              });
+
+              // Restore Text Color Selection
+              const textSwatches = document.querySelectorAll(
+                "#textColorOptions .color-swatch"
+              );
+              textSwatches.forEach((swatch) => {
+                if (swatch.dataset.color === formatting.textColor) {
+                  swatch.classList.add("selected");
+                } else {
+                  swatch.classList.remove("selected");
+                }
+              });
+
+              // Update the preview panel
+              updatePreview();
+            }
+          })
+          .catch((error) => {
+            console.error("Error getting tab formatting:", error);
+          });
+
+        // Check if the current tab has highlighting enabled
+        console.log(
+          "[DEBUG] Popup: Sending getTabEnabled message for tab:",
+          activeTab.id
+        );
+        browserAPI.runtime
+          .sendMessage({
+            action: "getTabEnabled",
+            tabId: activeTab.id,
+          })
+          .then((response) => {
+            console.log("[DEBUG] Popup: Got enabled state response:", response);
+            const isEnabled = response && response.enabled === true;
+            console.log("[DEBUG] Popup: Tab enabled state is:", isEnabled);
+
+            // Restore Toggle Button State based on current tab only
+            const enabledToggle = document.getElementById("enabledToggle");
+            if (isEnabled) {
+              enabledToggle.classList.add("active");
+              enabledToggle.setAttribute("aria-pressed", "true");
+              console.log("[DEBUG] Popup: Set toggle to ACTIVE");
+            } else {
+              enabledToggle.classList.remove("active");
+              enabledToggle.setAttribute("aria-pressed", "false");
+              console.log("[DEBUG] Popup: Set toggle to INACTIVE");
+            }
+
+            // Update UI States based on this tab's toggle state
+            updateColorPickersState(isEnabled);
+          })
+          .catch((error) => {
+            console.error("Error getting tab enabled state:", error);
+            // Default to disabled if there's an error
+            const enabledToggle = document.getElementById("enabledToggle");
+            enabledToggle.classList.remove("active");
+            enabledToggle.setAttribute("aria-pressed", "false");
+            updateColorPickersState(false);
+          });
       }
-
-      // Restore Background Color Selection
-      const bgSwatches = document.querySelectorAll(
-        "#backgroundColorOptions .color-swatch",
-      );
-      bgSwatches.forEach((swatch) => {
-        if (swatch.dataset.color === options.backgroundColor) {
-          swatch.classList.add("selected");
-        } else {
-          swatch.classList.remove("selected");
-        }
-      });
-
-      // Restore Text Color Selection
-      const textSwatches = document.querySelectorAll(
-        "#textColorOptions .color-swatch",
-      );
-      textSwatches.forEach((swatch) => {
-        if (swatch.dataset.color === options.textColor) {
-          swatch.classList.add("selected");
-        } else {
-          swatch.classList.remove("selected");
-        }
-      });
-
-      // Update the preview panel
-      updatePreview();
-
-      // Update UI States based on toggle
-      updateColorPickersState(options.enabled);
     })
     .catch((error) => {
-      console.error("Error restoring options:", error);
+      console.error("Error getting active tab:", error);
     });
 }
 
@@ -166,7 +261,7 @@ function updateColorPickersState(isEnabled) {
 function setupColorSwatches() {
   // Background Color Swatches
   const bgSwatches = document.querySelectorAll(
-    "#backgroundColorOptions .color-swatch",
+    "#backgroundColorOptions .color-swatch"
   );
   bgSwatches.forEach((swatch) => {
     swatch.addEventListener("click", () => {
@@ -178,7 +273,7 @@ function setupColorSwatches() {
 
   // Text Color Swatches
   const textSwatches = document.querySelectorAll(
-    "#textColorOptions .color-swatch",
+    "#textColorOptions .color-swatch"
   );
   textSwatches.forEach((swatch) => {
     swatch.addEventListener("click", () => {
@@ -193,61 +288,71 @@ function setupColorSwatches() {
 function setupToggleButton() {
   const enabledToggle = document.getElementById("enabledToggle");
   enabledToggle.addEventListener("click", () => {
-    const isActive = enabledToggle.classList.toggle("active");
-    enabledToggle.setAttribute("aria-pressed", isActive);
-    handleToggleChange(isActive);
+    const isCurrentlyEnabled = enabledToggle.classList.contains("active");
+    const newState = !isCurrentlyEnabled;
+
+    if (newState) {
+      enabledToggle.classList.add("active");
+      enabledToggle.setAttribute("aria-pressed", "true");
+    } else {
+      enabledToggle.classList.remove("active");
+      enabledToggle.setAttribute("aria-pressed", "false");
+    }
+
+    handleToggleChange(newState);
   });
 }
 
 // Handle form submission
 function handleFormSubmit() {
-  const form = document.getElementById("options-form");
-  form.addEventListener("submit", (e) => {
+  document.getElementById("options-form").addEventListener("submit", (e) => {
     e.preventDefault();
 
-    const options = {
-      enabled: document
-        .getElementById("enabledToggle")
-        .classList.contains("active"),
-      backgroundColor: getSelectedColor("#backgroundColorOptions"),
-      textColor: getSelectedColor("#textColorOptions"),
-    };
+    // Get selected colors
+    const backgroundColor = getSelectedColor("#backgroundColorOptions");
+    const textColor = getSelectedColor("#textColorOptions");
 
-    saveOptions(options);
+    // Save options for the current tab
+    saveOptions({
+      backgroundColor,
+      textColor,
+    });
   });
 }
 
-// Get selected color from a color options panel
+// Get the selected color from a color panel
 function getSelectedColor(panelSelector) {
-  const panel = document.querySelector(
-    `${panelSelector} .color-swatch.selected`,
+  const selectedSwatch = document.querySelector(
+    `${panelSelector} .color-swatch.selected`
   );
-  return panel
-    ? panel.getAttribute("data-color")
+  return selectedSwatch
+    ? selectedSwatch.dataset.color
     : DEFAULT_OPTIONS.backgroundColor;
 }
 
-// Initialize Color Swatches
+// Initialize color swatches
 function initializeColorSwatches() {
+  // Set up event listeners for color swatches
   setupColorSwatches();
-}
 
-// Add event listeners
-document.addEventListener("DOMContentLoaded", () => {
-  restoreOptions();
+  // Set up toggle button
   setupToggleButton();
+
+  // Set up form submission
   handleFormSubmit();
-  initializeColorSwatches();
-});
+
+  // Restore options from storage
+  restoreOptions();
+}
 
 // Add new function to update preview
 function updatePreview() {
   const previewText = document.getElementById("previewText");
   const selectedBackground = document.querySelector(
-    "#backgroundColorOptions .color-swatch.selected",
+    "#backgroundColorOptions .color-swatch.selected"
   );
   const selectedText = document.querySelector(
-    "#textColorOptions .color-swatch.selected",
+    "#textColorOptions .color-swatch.selected"
   );
 
   // Set background color
@@ -263,4 +368,54 @@ function updatePreview() {
   } else if (selectedText) {
     previewText.style.color = selectedText.dataset.color;
   }
+}
+
+// Initialize when the DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("[DEBUG] Popup: DOMContentLoaded event fired");
+  initializeColorSwatches();
+
+  // Add a message listener to detect tab state changes
+  browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log("[DEBUG] Popup: Received message:", message);
+
+    // If we receive a message about tab enabled state changing
+    if (message.action === "updateTabEnabled") {
+      console.log(
+        "[DEBUG] Popup: Received updateTabEnabled message with enabled =",
+        message.enabled
+      );
+
+      // Update the toggle button state
+      const enabledToggle = document.getElementById("enabledToggle");
+      if (message.enabled) {
+        console.log("[DEBUG] Popup: Setting toggle to ACTIVE from message");
+        enabledToggle.classList.add("active");
+        enabledToggle.setAttribute("aria-pressed", "true");
+      } else {
+        console.log("[DEBUG] Popup: Setting toggle to INACTIVE from message");
+        enabledToggle.classList.remove("active");
+        enabledToggle.setAttribute("aria-pressed", "false");
+      }
+
+      // Update UI States based on this message
+      updateColorPickersState(message.enabled);
+
+      sendResponse({ success: true });
+      return true;
+    }
+
+    return false;
+  });
+});
+
+// Export functions for testing
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    restoreOptions,
+    updateTabIndicator,
+    handleToggleChange,
+    updateColorPickersState,
+    getDomainFromTab,
+  };
 }
