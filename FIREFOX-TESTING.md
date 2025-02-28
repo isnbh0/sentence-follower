@@ -7,7 +7,7 @@ This guide explains how to test the Sentence Follower extension in Firefox.
 To create a Firefox-compatible version of the extension with the current state of your code, run:
 
 ```bash
-./setup-firefox-test.sh
+./scripts/setup-firefox-test.sh
 ```
 
 This script will:

@@ -7,7 +7,7 @@ This guide explains how to test the Sentence Follower extension in Chrome.
 To create a Chrome-compatible version of the extension with the current state of your code, run:
 
 ```bash
-./setup-chrome-test.sh
+./scripts/setup-chrome-test.sh
 ```
 
 This script will:
