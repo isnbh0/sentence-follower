@@ -58,96 +58,47 @@ function initFloatingUI() {
   header.style.cursor = "pointer"; // Indicate it's clickable
   // Add click handler to expand when minimized
   header.addEventListener("click", (e) => {
-    // Only expand if clicking on the header itself, not on buttons
-    if (
-      e.target === header ||
-      e.target.id === "floating-ui-header" ||
-      e.target.className === "floating-ui-title"
-    ) {
-      if (isMinimized) {
-        expandFloatingUI();
-      }
-    }
+    // Only expand if clicking on the plus button when minimized
+    // The plus button click is handled by the button's own click handler
+    // This handler is now empty as we don't want header clicks to un-minimize
   });
 
-  // Title
-  const title = document.createElement("div");
-  title.textContent = "Sentence Follower";
-  title.className = "floating-ui-title";
-  title.style.fontWeight = "bold";
-  header.appendChild(title);
+  // Replace title text with extension icon
+  const iconContainer = document.createElement("div");
+  iconContainer.className = "floating-ui-icon";
+  iconContainer.style.display = "flex";
+  iconContainer.style.alignItems = "center";
 
-  // Actions container
-  const actions = document.createElement("div");
-  actions.style.display = "flex";
-  actions.style.gap = "5px";
+  // Create and add the icon - using bigger icon and increasing its size
+  const icon = document.createElement("img");
+  icon.src = browserAPI.runtime.getURL("icons/icon128.png");
+  icon.alt = "Sentence Follower";
+  icon.style.width = "20px"; // Slightly bigger
+  icon.style.height = "20px"; // Slightly bigger
+  icon.style.marginRight = "5px";
+  iconContainer.appendChild(icon);
 
-  // Minimize button
-  const minimizeBtn = document.createElement("button");
-  minimizeBtn.textContent = "−";
-  minimizeBtn.title = "Minimize";
-  minimizeBtn.style.border = "none";
-  minimizeBtn.style.background = "transparent";
-  minimizeBtn.style.cursor = "pointer";
-  minimizeBtn.style.fontSize = "16px";
-  minimizeBtn.style.padding = "0 5px";
-  minimizeBtn.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent expanding when clicking minimize
-    if (isMinimized) {
-      expandFloatingUI();
-    } else {
-      minimizeFloatingUI();
-    }
-  });
-  actions.appendChild(minimizeBtn);
+  header.appendChild(iconContainer);
 
-  // Close button
-  const closeBtn = document.createElement("button");
-  closeBtn.textContent = "×";
-  closeBtn.title = "Close";
-  closeBtn.style.border = "none";
-  closeBtn.style.background = "transparent";
-  closeBtn.style.cursor = "pointer";
-  closeBtn.style.fontSize = "16px";
-  closeBtn.style.padding = "0 5px";
-  closeBtn.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent expanding when clicking close
-    hideFloatingUI();
-  });
-  actions.appendChild(closeBtn);
-
-  header.appendChild(actions);
-  floatingUIContainer.appendChild(header);
-
-  // Add drag functionality
-  header.addEventListener("mousedown", startDrag);
-
-  // Add the toggle switch
-  const toggleContainer = document.createElement("div");
-  toggleContainer.style.display = "flex";
-  toggleContainer.style.justifyContent = "space-between";
-  toggleContainer.style.alignItems = "center";
-  toggleContainer.style.marginBottom = "15px";
-
-  const toggleLabel = document.createElement("label");
-  toggleLabel.textContent = "Enable";
-  toggleLabel.style.fontWeight = "bold";
-
+  // Create the toggle switch to be added right after the icon
   const toggleSwitch = document.createElement("div");
   toggleSwitch.className = "floating-toggle-button";
   toggleSwitch.style.position = "relative";
-  toggleSwitch.style.width = "40px";
-  toggleSwitch.style.height = "20px";
+  toggleSwitch.style.width = "32px"; // Slightly smaller to fit in header
+  toggleSwitch.style.height = "16px"; // Slightly smaller to fit in header
   toggleSwitch.style.backgroundColor = "#ccc";
-  toggleSwitch.style.borderRadius = "10px";
+  toggleSwitch.style.borderRadius = "8px";
   toggleSwitch.style.cursor = "pointer";
   toggleSwitch.style.transition = "0.3s";
+  // Remove margin-left: auto to position it next to the icon instead of on the right
+  toggleSwitch.style.marginRight = "0"; // No right margin needed now
+  toggleSwitch.style.marginLeft = "3px"; // Small space after the icon
 
   // Toggle switch handle
   const toggleHandle = document.createElement("div");
   toggleHandle.style.position = "absolute";
-  toggleHandle.style.width = "16px";
-  toggleHandle.style.height = "16px";
+  toggleHandle.style.width = "12px"; // Slightly smaller to match
+  toggleHandle.style.height = "12px"; // Slightly smaller to match
   toggleHandle.style.left = "2px";
   toggleHandle.style.top = "2px";
   toggleHandle.style.backgroundColor = "white";
@@ -155,7 +106,8 @@ function initFloatingUI() {
   toggleHandle.style.transition = "0.3s";
   toggleSwitch.appendChild(toggleHandle);
 
-  toggleSwitch.addEventListener("click", () => {
+  toggleSwitch.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent header click event from firing
     if (isUpdatingUI) return; // Prevent clicks during updates
 
     isUpdatingUI = true;
@@ -197,9 +149,54 @@ function initFloatingUI() {
     }
   });
 
-  toggleContainer.appendChild(toggleLabel);
-  toggleContainer.appendChild(toggleSwitch);
-  floatingUIContainer.appendChild(toggleContainer);
+  // Add the toggle right after the icon
+  header.appendChild(toggleSwitch);
+
+  // Actions container - now needs to be pushed to the right
+  const actions = document.createElement("div");
+  actions.style.display = "flex";
+  actions.style.gap = "5px";
+  actions.style.marginLeft = "auto"; // This pushes it to the right
+
+  // Minimize button
+  const minimizeBtn = document.createElement("button");
+  minimizeBtn.textContent = "−";
+  minimizeBtn.title = "Minimize";
+  minimizeBtn.style.border = "none";
+  minimizeBtn.style.background = "transparent";
+  minimizeBtn.style.cursor = "pointer";
+  minimizeBtn.style.fontSize = "16px";
+  minimizeBtn.style.padding = "0 5px";
+  minimizeBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent expanding when clicking minimize
+    if (isMinimized) {
+      expandFloatingUI();
+    } else {
+      minimizeFloatingUI();
+    }
+  });
+  actions.appendChild(minimizeBtn);
+
+  // Close button
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "×";
+  closeBtn.title = "Close";
+  closeBtn.style.border = "none";
+  closeBtn.style.background = "transparent";
+  closeBtn.style.cursor = "pointer";
+  closeBtn.style.fontSize = "16px";
+  closeBtn.style.padding = "0 5px";
+  closeBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent expanding when clicking close
+    hideFloatingUI();
+  });
+  actions.appendChild(closeBtn);
+
+  header.appendChild(actions);
+  floatingUIContainer.appendChild(header);
+
+  // Add drag functionality
+  header.addEventListener("mousedown", startDrag);
 
   // Add color swatches section
   const colorsSection = document.createElement("div");
@@ -319,7 +316,7 @@ function initFloatingUI() {
   floatingUIContainer.appendChild(previewSection);
 
   // Store all content elements for easy collapse/expand
-  contentElements = [toggleContainer, colorsSection, previewSection];
+  contentElements = [colorsSection, previewSection];
 
   // Add to document
   document.body.appendChild(floatingUIContainer);
@@ -631,7 +628,7 @@ function updateToggleSwitch(isEnabled) {
   if (isEnabled) {
     toggleSwitch.classList.add("active");
     toggleSwitch.style.backgroundColor = "#4CAF50";
-    toggleHandle.style.left = "22px";
+    toggleHandle.style.left = "18px"; // Adjusted for smaller toggle
   } else {
     toggleSwitch.classList.remove("active");
     toggleSwitch.style.backgroundColor = "#ccc";
@@ -644,6 +641,9 @@ function updateToggleSwitch(isEnabled) {
 // Drag functionality
 function startDrag(e) {
   if (e.target.tagName === "BUTTON") return; // Don't drag if clicking on buttons
+
+  // If minimized, only allow dragging but don't expand
+  // We'll track that we're dragging but won't modify the minimized state
 
   isDragging = true;
   dragStartX = e.clientX;
@@ -706,8 +706,10 @@ function minimizeFloatingUI() {
     minimizeBtn.title = "Expand";
   }
 
-  // Adjust padding to make the header more compact but not too tight
+  // Make the header more compact
   floatingUIContainer.style.paddingBottom = "6px";
+
+  // Remove width changes to maintain consistent width
 }
 
 // Expand the minimized floating UI
@@ -736,7 +738,7 @@ function expandFloatingUI() {
     minimizeBtn.title = "Minimize";
   }
 
-  // Restore original padding
+  // Restore original padding but keep width consistent
   floatingUIContainer.style.paddingBottom = "10px";
 }
 
