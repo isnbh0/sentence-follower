@@ -2,40 +2,206 @@
 
 # Script to set up the current state of the code for Firefox testing
 # This script should be run from the project root
+#
+# Usage:
+#   ./scripts/setup-firefox-test.sh [--webpack]
+#
+# Options:
+#   --webpack    Build with webpack in production mode before packaging
 
-echo "Setting up Firefox test environment..."
+set -e  # Exit on any error
 
-# Create firefox-test directory if it doesn't exist
-mkdir -p firefox-test
+# Configuration
+FIREFOX_TEST_DIR="firefox-test"
+ZIP_FILE="sentence-follower-firefox.zip"
+USE_WEBPACK=false
 
-# Clean up any existing files in firefox-test
-echo "Cleaning up existing files..."
-rm -rf firefox-test/*
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Create necessary subdirectories
-mkdir -p firefox-test/content_scripts
-mkdir -p firefox-test/options
-mkdir -p firefox-test/icons
+# Function to print colored output
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
 
-# Copy current files
-echo "Copying current files..."
-cp -r content_scripts/* firefox-test/content_scripts/
-cp -r options/* firefox-test/options/
-cp -r icons/* firefox-test/icons/
-cp background.js firefox-test/
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
 
-# Copy the manifest.json file for Firefox
-# Firefox supports both Manifest V2 and V3, so we can use the existing manifest
-echo "Copying manifest.json for Firefox..."
-cp manifest.json firefox-test/manifest.json
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
 
-# Create README.md in firefox-test
-echo "Creating README.md..."
-cat > firefox-test/README.md << 'EOF'
-# Sentence Follower - Firefox Test Version
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to show usage information
+show_usage() {
+    echo "Usage: $0 [--webpack]"
+    echo ""
+    echo "Options:"
+    echo "  --webpack    Build with webpack in production mode before packaging"
+    echo "  --help       Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0           # Use source files directly"
+    echo "  $0 --webpack # Build with webpack first, then package"
+}
+
+# Function to validate prerequisites
+validate_prerequisites() {
+    print_info "Validating prerequisites..."
+    
+    # Check if we're in the project root
+    if [[ ! -f "manifest.json" ]]; then
+        print_error "manifest.json not found. Please run this script from the project root."
+        exit 1
+    fi
+    
+    # If webpack mode is enabled, check for required files and dependencies
+    if [[ "$USE_WEBPACK" == true ]]; then
+        if [[ ! -f "webpack.config.js" ]]; then
+            print_error "webpack.config.js not found. Cannot build with webpack."
+            exit 1
+        fi
+        
+        if [[ ! -f "package.json" ]]; then
+            print_error "package.json not found. Cannot build with webpack."
+            exit 1
+        fi
+        
+        # Check if node_modules exists
+        if [[ ! -d "node_modules" ]]; then
+            print_warning "node_modules directory not found. You may need to run 'npm install' first."
+        fi
+    fi
+}
+
+# Function to build with webpack
+build_with_webpack() {
+    print_info "Building project with webpack in production mode..."
+    
+    # Check if npm is available
+    if ! command -v npm &> /dev/null; then
+        print_error "npm is required for webpack build but not found in PATH."
+        exit 1
+    fi
+    
+    # Run webpack build
+    if npm run build:prod; then
+        print_success "Webpack build completed successfully"
+    else
+        print_error "Webpack build failed"
+        exit 1
+    fi
+    
+    # Verify dist directory was created
+    if [[ ! -d "dist" ]]; then
+        print_error "dist directory not found after webpack build"
+        exit 1
+    fi
+}
+
+# Function to setup directory structure
+setup_directories() {
+    print_info "Setting up directory structure..."
+    
+    # Create firefox-test directory if it doesn't exist
+    mkdir -p "$FIREFOX_TEST_DIR"
+    
+    # Clean up any existing files in firefox-test
+    print_info "Cleaning up existing files..."
+    rm -rf "${FIREFOX_TEST_DIR:?}"/*
+    
+    # Create necessary subdirectories
+    mkdir -p "$FIREFOX_TEST_DIR/content_scripts"
+    mkdir -p "$FIREFOX_TEST_DIR/options"
+    mkdir -p "$FIREFOX_TEST_DIR/icons"
+}
+
+# Function to copy webpack built files
+copy_webpack_files() {
+    print_info "Copying webpack built files..."
+    
+    # Copy all content_scripts
+    if [[ -d "dist/content_scripts" ]]; then
+        cp -r dist/content_scripts/* "$FIREFOX_TEST_DIR/content_scripts/"
+    fi
+    
+    # Copy options files
+    if [[ -d "dist/options" ]]; then
+        cp -r dist/options/* "$FIREFOX_TEST_DIR/options/"
+    fi
+    
+    # Copy icons
+    if [[ -d "dist/icons" ]]; then
+        cp -r dist/icons/* "$FIREFOX_TEST_DIR/icons/"
+    fi
+    
+    # Copy background script
+    if [[ -f "dist/background.js" ]]; then
+        cp dist/background.js "$FIREFOX_TEST_DIR/"
+    fi
+    
+    # Copy manifest
+    if [[ -f "dist/manifest.json" ]]; then
+        cp dist/manifest.json "$FIREFOX_TEST_DIR/"
+    fi
+}
+
+# Function to copy source files
+copy_source_files() {
+    print_info "Copying source files..."
+    
+    # Copy current files
+    cp -r content_scripts/* "$FIREFOX_TEST_DIR/content_scripts/"
+    cp -r options/* "$FIREFOX_TEST_DIR/options/"
+    cp -r icons/* "$FIREFOX_TEST_DIR/icons/"
+    cp background.js "$FIREFOX_TEST_DIR/"
+    cp manifest.json "$FIREFOX_TEST_DIR/"
+}
+
+# Function to create README
+create_readme() {
+    print_info "Creating README.md..."
+    
+    local build_info=""
+    if [[ "$USE_WEBPACK" == true ]]; then
+        build_info=" (Webpack Production Build)"
+    else
+        build_info=" (Source Files)"
+    fi
+    
+    cat > "$FIREFOX_TEST_DIR/README.md" << EOF
+# Sentence Follower - Firefox Test Version${build_info}
 
 This is a temporary Firefox version of the Sentence Follower extension for testing purposes.
 
+## Build Information
+
+EOF
+
+    if [[ "$USE_WEBPACK" == true ]]; then
+        cat >> "$FIREFOX_TEST_DIR/README.md" << 'EOF'
+This version was built using webpack in production mode, which includes:
+- Code minification and optimization
+- Debug statements removed
+- Production-ready bundle
+
+EOF
+    else
+        cat >> "$FIREFOX_TEST_DIR/README.md" << 'EOF'
+This version uses the source files directly without webpack processing.
+
+EOF
+    fi
+
+    cat >> "$FIREFOX_TEST_DIR/README.md" << 'EOF'
 ## Installing in Firefox
 
 ### Temporary Installation (for testing)
@@ -55,27 +221,95 @@ Once installed, the extension will highlight the sentence under your cursor as y
 - Toggle the extension on/off: `Alt+Shift+H`
 - Configure appearance: Click the extension icon in the toolbar
 EOF
+}
 
-# Create a zip file for easy installation
-echo "Creating zip file..."
-cd firefox-test
-zip -r ../sentence-follower-firefox.zip *
-cd ..
+# Function to create zip file
+create_zip() {
+    print_info "Creating zip file..."
+    
+    # Remove existing zip file if it exists
+    [[ -f "$ZIP_FILE" ]] && rm "$ZIP_FILE"
+    
+    # Create zip file
+    (cd "$FIREFOX_TEST_DIR" && zip -r "../$ZIP_FILE" .)
+    
+    if [[ -f "$ZIP_FILE" ]]; then
+        print_success "Created $ZIP_FILE"
+    else
+        print_error "Failed to create zip file"
+        exit 1
+    fi
+}
 
-echo "Firefox test environment setup complete!"
-echo ""
-echo "You can now install the extension in Firefox using one of these methods:"
-echo ""
-echo "Method 1: Using the Directory"
-echo "1. Open Firefox"
-echo "2. Navigate to about:debugging"
-echo "3. Click 'This Firefox'"
-echo "4. Click 'Load Temporary Add-on...'"
-echo "5. Navigate to the firefox-test directory and select the manifest.json file"
-echo ""
-echo "Method 2: Using the ZIP File"
-echo "1. Open Firefox"
-echo "2. Navigate to about:debugging"
-echo "3. Click 'This Firefox'"
-echo "4. Click 'Load Temporary Add-on...'"
-echo "5. Select the sentence-follower-firefox.zip file" 
+# Function to show completion instructions
+show_completion_info() {
+    local build_type=""
+    if [[ "$USE_WEBPACK" == true ]]; then
+        build_type=" using webpack production build"
+    fi
+    
+    print_success "Firefox test environment setup complete${build_type}!"
+    echo ""
+    echo "You can now install the extension in Firefox using one of these methods:"
+    echo ""
+    echo "Method 1: Using the Directory"
+    echo "1. Open Firefox"
+    echo "2. Navigate to about:debugging"
+    echo "3. Click 'This Firefox'"
+    echo "4. Click 'Load Temporary Add-on...'"
+    echo "5. Navigate to the $FIREFOX_TEST_DIR directory and select the manifest.json file"
+    echo ""
+    echo "Method 2: Using the ZIP File"
+    echo "1. Open Firefox"
+    echo "2. Navigate to about:debugging"
+    echo "3. Click 'This Firefox'"
+    echo "4. Click 'Load Temporary Add-on...'"
+    echo "5. Select the $ZIP_FILE file"
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --webpack)
+            USE_WEBPACK=true
+            shift
+            ;;
+        --help)
+            show_usage
+            exit 0
+            ;;
+        *)
+            print_error "Unknown option: $1"
+            show_usage
+            exit 1
+            ;;
+    esac
+done
+
+# Main execution
+main() {
+    print_info "Setting up Firefox test environment..."
+    
+    if [[ "$USE_WEBPACK" == true ]]; then
+        print_info "Using webpack production build mode"
+    else
+        print_info "Using source files directly"
+    fi
+    
+    validate_prerequisites
+    setup_directories
+    
+    if [[ "$USE_WEBPACK" == true ]]; then
+        build_with_webpack
+        copy_webpack_files
+    else
+        copy_source_files
+    fi
+    
+    create_readme
+    create_zip
+    show_completion_info
+}
+
+# Run main function
+main 

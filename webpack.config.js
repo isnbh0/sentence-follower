@@ -40,7 +40,7 @@ module.exports = (env, argv) => {
         patterns: [
           { from: "manifest.json", to: "manifest.json" },
           { from: "icons", to: "icons" },
-          { from: "options/options.html", to: "options/options.html" }
+          { from: "options/options.html", to: "options/options.html" },
         ],
       }),
     ],
@@ -54,6 +54,10 @@ module.exports = (env, argv) => {
               // So debug statements guarded by IS_DEBUG will be removed
               dead_code: true,
               drop_console: isProduction,
+            },
+            mangle: {
+              // Don't mangle these global variables to prevent breaking extension APIs
+              reserved: ["browserAPI", "chrome", "browser"],
             },
           },
         }),

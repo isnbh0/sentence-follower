@@ -1,5 +1,8 @@
 // Floating UI for Sentence Follower
-// browserAPI is now defined in common.js and shared across content scripts
+// browserAPI is now defined in common.js and made globally available via window.browserAPI
+
+// Access browserAPI from the global window object to ensure webpack minification doesn't break it
+const browserAPI = window.browserAPI;
 
 // Default position for the floating UI
 const DEFAULT_POSITION = {

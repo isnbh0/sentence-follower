@@ -28,6 +28,12 @@ const browserAPI =
         },
       };
 
+// Make browserAPI globally available by attaching to window
+// This prevents webpack minification from breaking the reference
+if (typeof window !== "undefined") {
+  window.browserAPI = browserAPI;
+}
+
 // Create a dummy log function if logging.js hasn't loaded yet
 if (typeof window.log === "undefined") {
   window.log = {

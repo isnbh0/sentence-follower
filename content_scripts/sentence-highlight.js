@@ -1,4 +1,7 @@
-// browserAPI is now defined in common.js
+// browserAPI is now defined in common.js and made globally available via window.browserAPI
+
+// Access browserAPI from the global window object to ensure webpack minification doesn't break it
+const browserAPI = window.browserAPI;
 
 // Remove local DEBUG flag and log utility as we'll use the centralized one from logging.js
 // const DEBUG = false;
