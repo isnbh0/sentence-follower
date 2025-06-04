@@ -26,7 +26,10 @@ jobs:
         run: npm install -g web-ext
 
       - name: Build extension
-        run: npm run build
+        run: npm run build:prod
+
+      - name: Package for web-ext artifacts
+        run: web-ext build --config=.web-ext-config.cjs
 
       - name: Create GitHub Release
         id: create_release

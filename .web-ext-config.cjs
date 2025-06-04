@@ -9,6 +9,8 @@ const untrackedFiles = execSync("git ls-files --others ':!node_modules/**'", {
 
 // Export the config
 module.exports = {
+  // Use the webpack dist output as the source
+  sourceDir: "dist",
   build: {
     overwriteDest: true, // optional, overwrite existing build
   },

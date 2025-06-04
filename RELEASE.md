@@ -66,8 +66,9 @@ When a tag matching `v*` is pushed:
 
 1. The `release.yml` workflow triggers
 2. The workflow:
-   - Builds the extension with `npm run build`
-   - Creates a GitHub Release with the built extension
+   - Installs dependencies using `npm ci`
+   - Builds the extension with `npm run build:prod`
+   - Creates a GitHub release with the generated ZIP file
    - Publishes to Mozilla Add-ons using JWT credentials
    - Publishes to Chrome Web Store using Google API credentials
 
@@ -140,13 +141,24 @@ npm version patch|minor|major
 git push origin main --tags
 
 # Manual build (if needed)
-npm run build
+npm run build:prod
 
 # Manual publishing (if GitHub Actions fails)
 npm run publish:mozilla     # Publish to Mozilla
 npm run publish:chrome      # Publish to Chrome
 npm run publish             # Publish to both
 ```
+
+## How to Create a Release Manually
+
+1. Update version in `package.json`
+2. Run the version script: `npm run version`
+3. Build the extension using `npm run build:prod`
+4. Create and push a version tag:
+   ```bash
+   git tag v0.x.x
+   git push origin v0.x.x
+   ```
 
 ---
 

@@ -27,6 +27,7 @@ fs.mkdtemp(tempDirPrefix, async (err, tempDir) => {
 
   try {
     // Define the files and directories to include in the Chrome extension package
+    // These should come from the webpack dist output, not the source directories
     const filesToInclude = [
       "manifest.json",
       "background.js",
@@ -35,23 +36,29 @@ fs.mkdtemp(tempDirPrefix, async (err, tempDir) => {
       "icons/",
     ];
 
-    const baseDir = path.resolve(__dirname, "../");
+    // Use the dist directory as the base (webpack output) instead of source
+    const baseDir = path.resolve(__dirname, "../dist");
+
+    // Check if dist directory exists (should be created by webpack build)
+    if (!fs.existsSync(baseDir)) {
+      console.error(
+        "❌ Error: dist directory not found. Please run 'npm run build:prod' first."
+      );
+      process.exit(1);
+    }
 
     const filesToIgnore = [
       "**/node_modules/**",
       "**/__tests__/**",
       "**/*.test.js",
       "**/.git/**",
-      "content_scripts/__mocks__",
-      "content_scripts/__mocks__/**",
-      "content_scripts/sentence-highlight.test.js",
     ];
 
     // Custom ignore function to log excluded files
     function shouldIgnore(filePath) {
       const relativePath = path.relative(baseDir, filePath);
       const isIgnored = filesToIgnore.some((pattern) =>
-        minimatch(relativePath, pattern, { dot: true }),
+        minimatch(relativePath, pattern, { dot: true })
       );
       if (isIgnored) {
         console.log(`❌ Excluded: ${relativePath}`);
@@ -86,7 +93,7 @@ fs.mkdtemp(tempDirPrefix, async (err, tempDir) => {
     // Listen for all archive data to be written
     output.on("close", () => {
       console.log(
-        `✅ Extension package zipped successfully. Total size: ${archive.pointer()} bytes`,
+        `✅ Extension package zipped successfully. Total size: ${archive.pointer()} bytes`
       );
       // Clean up the temporary directory
       fs.rm(tempDir, { recursive: true, force: true }, (err) => {
