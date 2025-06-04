@@ -1,6 +1,6 @@
 {
   "name": "sentence-follower-extension",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "main": "content_scripts/sentence-highlight.js",
   "keywords": [],
   "author": "",
